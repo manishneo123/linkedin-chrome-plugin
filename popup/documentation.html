@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Sales Copilot - Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #0a66c2;
+            font-size: 32px;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #0a66c2;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #0a66c2;
+            font-size: 24px;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        h3 {
+            color: #333;
+            font-size: 20px;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        h4 {
+            color: #666;
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #d63384;
+        }
+
+        .feature-box {
+            background: #f8f9fa;
+            border-left: 4px solid #0a66c2;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border-left: 4px solid #0dcaf0;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #0a66c2;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .toc {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 30px 0;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: #0a66c2;
+        }
+
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .toc li {
+            margin-bottom: 8px;
+        }
+
+        .toc a {
+            color: #0a66c2;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #0a66c2;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #0a66c2;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge-premium {
+            background: #ffd700;
+            color: #333;
+        }
+
+        .badge-new {
+            background: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="popup.html" class="back-link">← Back to Extension</a>
+        
+        <h1>AI Sales Copilot for LinkedIn - Complete Documentation</h1>
+        <p style="font-size: 18px; color: #666; margin-bottom: 30px;">
+            Your intelligent sales assistant that transforms LinkedIn profiles into actionable sales briefs with AI-powered analysis, personalized messaging, and strategic outreach recommendations.
+        </p>
+
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#overview">1. Overview</a></li>
+                <li><a href="#features">2. Key Features</a></li>
+                <li><a href="#getting-started">3. Getting Started</a></li>
+                <li><a href="#profile-analysis">4. Profile Analysis</a></li>
+                <li><a href="#messaging">5. Message Generation</a></li>
+                <li><a href="#credits">6. Credits & Billing</a></li>
+                <li><a href="#best-practices">7. Best Practices</a></li>
+                <li><a href="#troubleshooting">8. Troubleshooting</a></li>
+                <li><a href="#faq">9. Frequently Asked Questions</a></li>
+            </ul>
+        </div>
+
+        <h2 id="overview">1. Overview</h2>
+        <p>
+            AI Sales Copilot is a Chrome extension designed to supercharge your LinkedIn outreach by providing intelligent, data-driven insights about prospects. The tool analyzes LinkedIn profiles, extracts key signals, and generates personalized outreach messages tailored to your sales goals.
+        </p>
+
+        <div class="feature-box">
+            <strong>What makes AI Sales Copilot unique:</strong>
+            <ul>
+                <li><strong>One-Click Analysis:</strong> Instantly analyze any LinkedIn profile with comprehensive data extraction</li>
+                <li><strong>AI-Powered Insights:</strong> GPT-4 powered analysis for fit scoring, decision-maker identification, and strategy recommendations</li>
+                <li><strong>Personalized Messaging:</strong> Generate multiple message variants and complete outreach sequences</li>
+                <li><strong>Shared Context Matching:</strong> Automatically identify connections between you and prospects</li>
+                <li><strong>Company Research:</strong> Intelligent research on prospect companies relevant to your offering</li>
+                <li><strong>Related Prospects:</strong> Discover and analyze similar profiles that might be better targets</li>
+            </ul>
+        </div>
+
+        <h2 id="features">2. Key Features</h2>
+
+        <h3>2.1 Profile & Company Analysis</h3>
+        <p>
+            When you click "Analyze Profile" on any LinkedIn profile, the extension performs a comprehensive analysis:
+        </p>
+        <ul>
+            <li><strong>Structured Data Extraction:</strong> Extracts name, headline, current position, experience, education, skills, and location</li>
+            <li><strong>Company Information:</strong> Identifies current and past companies, industry, and company size</li>
+            <li><strong>Recent Activity:</strong> Analyzes recent posts, comments, and engagement to understand interests and priorities</li>
+            <li><strong>Related Profiles:</strong> Finds "People also viewed" and "People you may know" profiles</li>
+            <li><strong>Premium Status Detection:</strong> Identifies if the prospect has LinkedIn Premium (affects connection message length)</li>
+        </ul>
+
+        <h3>2.2 Fit Scoring & Qualification</h3>
+        <p>
+            The extension calculates two key scores:
+        </p>
+        <ul>
+            <li><strong>Company Fit Score (0-100):</strong> Measures how well the prospect's company matches your ICP</li>
+            <li><strong>Decision Power Score (0-100):</strong> Assesses the prospect's likelihood of being a decision-maker</li>
+        </ul>
+        <p>
+            Each score includes:
+        </p>
+        <ul>
+            <li>Top reasons for the score</li>
+            <li>Trigger signals (hints of initiatives or pain points)</li>
+            <li>Mismatches (red flags or disqualifiers)</li>
+            <li>Missing information that could improve the score</li>
+        </ul>
+
+        <h3>2.3 Decision-Maker & Influence Mapping</h3>
+        <p>
+            The tool classifies prospects into categories:
+        </p>
+        <ul>
+            <li><strong>Buyer:</strong> Direct decision-maker for your solution</li>
+            <li><strong>Influencer:</strong> Can influence the buying decision</li>
+            <li><strong>Champion:</strong> Internal advocate who can help you</li>
+            <li><strong>Not Ideal:</strong> Low likelihood of being a good fit</li>
+        </ul>
+        <p>
+            It also provides:
+        </p>
+        <ul>
+            <li>Alternate target recommendations (other roles to contact in the same company)</li>
+            <li>Multi-thread targets (2-4 roles to engage simultaneously)</li>
+            <li>Decision reasoning explaining why this classification was made</li>
+        </ul>
+
+        <h3>2.4 Shared Context Matching</h3>
+        <div class="info-box">
+            <strong>Shared Context Score:</strong> Automatically identifies connections between you and the prospect, such as:
+            <ul>
+                <li>Same college or university</li>
+                <li>Previous employers in common</li>
+                <li>Geographic location (same city/region)</li>
+                <li>Similar industry experience</li>
+                <li>Mutual connections</li>
+            </ul>
+            <p style="margin-top: 10px;">
+                <strong>Why it matters:</strong> Higher shared context scores enable warmer, more personalized outreach messages that reference these connections naturally.
+            </p>
+        </div>
+
+        <h3>2.5 Outreach Strategy Engine</h3>
+        <p>
+            Based on the analysis, the tool recommends the best outreach approach:
+        </p>
+        <ul>
+            <li><strong>Direct Pitch:</strong> When there's a strong fit and clear buying signals</li>
+            <li><strong>Warm-up:</strong> Comment/like on their posts + DM sequence for relationship building</li>
+            <li><strong>Referral Route:</strong> "Who owns X?" approach when you have mutual connections</li>
+            <li><strong>Multi-threading:</strong> Engage multiple stakeholders in the same account</li>
+            <li><strong>Partner-led:</strong> When a partner relationship might be more effective</li>
+        </ul>
+        <p>
+            Each strategy includes timing suggestions (when to reach out) and rationale explaining why this approach is recommended.
+        </p>
+
+        <h3>2.6 Personalized Message Generator</h3>
+        <p>
+            The extension generates multiple message types:
+        </p>
+
+        <h4>Connection Request</h4>
+        <ul>
+            <li>Automatically adjusts length based on your LinkedIn Premium status:
+                <ul>
+                    <li><strong>Free Account:</strong> Maximum 200 characters</li>
+                    <li><strong>Premium Account:</strong> Maximum 400 characters</li>
+                </ul>
+            </li>
+            <li>Personalized based on shared context, fit signals, and prospect interests</li>
+        </ul>
+
+        <h4>Message Variants</h4>
+        <ul>
+            <li><strong>Short Punchy:</strong> Concise, attention-grabbing message for busy executives</li>
+            <li><strong>Credibility-First:</strong> Leads with proof points, case studies, or metrics</li>
+            <li><strong>Insight-Led:</strong> Provides value upfront with industry insights or trends</li>
+            <li><strong>Soft-Ask:</strong> Low-friction approach with minimal commitment request</li>
+        </ul>
+
+        <h4>Complete Sequences</h4>
+        <ul>
+            <li><strong>First Message:</strong> Initial outreach optimized for response</li>
+            <li><strong>Follow-up 1:</strong> Sent 2-3 days later if no response</li>
+            <li><strong>Follow-up 2:</strong> Sent 1 week later</li>
+            <li><strong>Follow-up 3:</strong> Final follow-up 2 weeks later</li>
+            <li><strong>Breakup Message:</strong> Polite exit if no response after all follow-ups</li>
+        </ul>
+
+        <h4>Email Drafts</h4>
+        <p>
+            Professional email-style drafts that can be used for cold email outreach outside of LinkedIn.
+        </p>
+
+        <h3>2.7 Company Research</h3>
+        <p>
+            After analyzing a prospect, the tool automatically researches their current and past companies:
+        </p>
+        <ul>
+            <li>Company size, industry, and growth stage</li>
+            <li>Relevance to your offering</li>
+            <li>Potential pain points or opportunities</li>
+            <li>How your solution might fit their needs</li>
+        </ul>
+        <p>
+            This research is incorporated into the analysis and message generation to make outreach more relevant.
+        </p>
+
+        <h3>2.8 Post Summarization & Interest Extraction</h3>
+        <p>
+            The tool analyzes the prospect's recent LinkedIn activity:
+        </p>
+        <ul>
+            <li>Identifies "important" posts (not just routine updates)</li>
+            <li>Summarizes key themes and topics</li>
+            <li>Extracts interests, priorities, and pain points</li>
+            <li>Uses this information to personalize messages</li>
+        </ul>
+        <div class="warning-box">
+            <strong>Note:</strong> The tool only analyzes publicly visible posts. Private posts or posts from closed groups are not accessible.
+        </div>
+
+        <h3>2.9 Related Prospects Discovery</h3>
+        <p>
+            Automatically finds and analyzes related profiles:
+        </p>
+        <ul>
+            <li>Extracts "People also viewed" profiles</li>
+            <li>Extracts "People you may know" suggestions</li>
+            <li>Uses AI to score relevance to your ICP</li>
+            <li>Displays top 5 most relevant profiles with:
+                <ul>
+                    <li>Relevance score</li>
+                    <li>Fit reasons</li>
+                    <li>Potential value</li>
+                    <li>Decision power assessment</li>
+                </ul>
+            </li>
+            <li>Clickable links to open profiles in new tabs</li>
+        </ul>
+
+        <h2 id="getting-started">3. Getting Started</h2>
+
+        <h3>3.1 Installation</h3>
+        <ol>
+            <li>Install the Chrome extension from the Chrome Web Store (or load as unpacked extension)</li>
+            <li>The extension icon will appear in your Chrome toolbar</li>
+            <li>Navigate to any LinkedIn profile page</li>
+            <li>Click the extension icon to open the side panel</li>
+        </ol>
+
+        <h3>3.2 Initial Setup</h3>
+
+        <h4>Step 1: Configure Your Profile</h4>
+        <ol>
+            <li>Go to the <strong>Settings</strong> tab</li>
+            <li>Navigate to your own LinkedIn profile</li>
+            <li>Click <strong>"Capture My Profile"</strong></li>
+            <li>Wait for the profile to be analyzed (this enables Shared Context matching)</li>
+        </ol>
+        <div class="info-box">
+            <strong>Why capture your profile?</strong> This allows the tool to identify shared connections, common experiences, and geographic overlaps with prospects, enabling more personalized messaging.
+        </div>
+
+        <h4>Step 2: Choose Your Payment Method</h4>
+        <p>You have two options:</p>
+
+        <div class="feature-box">
+            <h4>Option A: Use Backend Credits (Recommended)</h4>
+            <ol>
+                <li>In Settings, toggle <strong>"Use Backend Credits"</strong> to ON</li>
+                <li>You'll receive free credits to start</li>
+                <li>When credits run low, click <strong>"Buy More Credits"</strong></li>
+                <li>Choose a package and complete payment via Stripe</li>
+                <li>Credits are automatically added to your account</li>
+            </ol>
+            <p><strong>Benefits:</strong> No need to manage API keys, automatic credit tracking, secure payment processing</p>
+        </div>
+
+        <div class="feature-box">
+            <h4>Option B: Use Your Own OpenAI API Key</h4>
+            <ol>
+                <li>In Settings, toggle <strong>"Use Backend Credits"</strong> to OFF</li>
+                <li>Get your OpenAI API key from <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></li>
+                <li>Paste your API key in the <strong>"OpenAI API Key"</strong> field</li>
+                <li>Your key is stored locally and never shared</li>
+            </ol>
+            <p><strong>Benefits:</strong> Direct control over API usage, pay OpenAI directly</p>
+        </div>
+
+        <h4>Step 3: Configure Your Sales Context</h4>
+        <p>Go to the <strong>Compose</strong> tab and fill in:</p>
+        <ul>
+            <li><strong>Outreach Goal:</strong> What you're trying to achieve (e.g., "Sell enterprise SEO services to B2B SaaS companies")</li>
+            <li><strong>ICP Definition:</strong> Your ideal customer profile (e.g., "B2B SaaS, 50-200 employees, Series A-B, marketing teams")</li>
+            <li><strong>What you sell (Offer):</strong> Your product/service description and value proposition</li>
+            <li><strong>Proof Points:</strong> Metrics, case studies, testimonials, or differentiators</li>
+        </ul>
+
+        <h4>Step 4: Set Your Strategy</h4>
+        <ul>
+            <li><strong>Risk Level:</strong>
+                <ul>
+                    <li><strong>Safe:</strong> Conservative, professional messaging</li>
+                    <li><strong>Balanced:</strong> Mix of professional and engaging</li>
+                    <li><strong>Bold:</strong> More direct, attention-grabbing approach</li>
+                </ul>
+            </li>
+            <li><strong>Offer Type:</strong>
+                <ul>
+                    <li><strong>Free Trial/Demo:</strong> Low-commitment offer</li>
+                    <li><strong>Consultation:</strong> Expert advice or assessment</li>
+                    <li><strong>Case Study:</strong> Share relevant success stories</li>
+                    <li><strong>Resource:</strong> Valuable content or tool</li>
+                    <li><strong>Direct Pitch:</strong> Straightforward product/service pitch</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2 id="profile-analysis">4. Profile Analysis Workflow</h2>
+
+        <h3>4.1 Running an Analysis</h3>
+        <ol>
+            <li>Navigate to any LinkedIn profile you want to analyze</li>
+            <li>Open the extension side panel</li>
+            <li>Ensure your sales context is configured in the Compose tab</li>
+            <li>Click <strong>"Analyze Profile"</strong></li>
+            <li>Wait for the analysis to complete (this may take 30-60 seconds)</li>
+            <li>Results will automatically appear in the Results tab</li>
+        </ol>
+
+        <div class="info-box">
+            <strong>What happens during analysis:</strong>
+            <ol>
+                <li>Profile data is scraped from the LinkedIn page</li>
+                <li>Structured data is extracted using AI</li>
+                <li>Recent activity is loaded and analyzed</li>
+                <li>Posts are summarized and interests extracted</li>
+                <li>Companies are researched</li>
+                <li>Related profiles are discovered and analyzed</li>
+                <li>Final analysis is generated with scores and recommendations</li>
+                <li>Personalized messages are created</li>
+            </ol>
+        </div>
+
+        <h3>4.2 Understanding the Results</h3>
+
+        <h4>Score Cards</h4>
+        <ul>
+            <li><strong>Company Fit Score:</strong> How well the prospect matches your ICP (0-100)</li>
+            <li><strong>Decision Power Score:</strong> Likelihood of being a decision-maker (0-100)</li>
+            <li><strong>Role Mapping Badge:</strong> Visual indicator of prospect type (Buyer/Influencer/Champion/Not Ideal)</li>
+        </ul>
+
+        <h4>Shared Context Banner</h4>
+        <p>
+            If you have shared connections or experiences with the prospect, a banner will appear showing:
+        </p>
+        <ul>
+            <li>Shared Context Score (percentage match)</li>
+            <li>Specific shared signals (e.g., "🎓 Same College: Stanford", "🏢 Ex-Google")</li>
+        </ul>
+
+        <h4>Outreach Strategy</h4>
+        <p>
+            The recommended approach with:
+        </p>
+        <ul>
+            <li>Strategy type (Direct Pitch, Warm-up, etc.)</li>
+            <li>Rationale explaining why this approach</li>
+            <li>Timing suggestions</li>
+        </ul>
+
+        <h4>Message Drafts</h4>
+        <p>
+            Multiple tabs with different message types:
+        </p>
+        <ul>
+            <li><strong>Connect:</strong> Connection request message</li>
+            <li><strong>Email:</strong> Cold email draft</li>
+            <li><strong>Variants:</strong> Four different message styles</li>
+            <li><strong>Sequence:</strong> Complete follow-up sequence</li>
+        </ul>
+        <p>
+            Each message has a copy icon (📋) for easy copying to clipboard.
+        </p>
+
+        <h4>Analysis Details</h4>
+        <p>
+            Expandable sections with:
+        </p>
+        <ul>
+            <li><strong>Fit Reasons:</strong> Why this prospect is a good fit</li>
+            <li><strong>Trigger Signals:</strong> Indicators of buying intent or pain points</li>
+            <li><strong>Mismatches:</strong> Red flags or disqualifiers</li>
+            <li><strong>Missing Info:</strong> Information that could improve the analysis</li>
+            <li><strong>Decision Reasoning:</strong> Why the prospect was classified as Buyer/Influencer/etc.</li>
+            <li><strong>Alternate Targets:</strong> Other roles to contact in the same company</li>
+            <li><strong>Multi-thread Targets:</strong> Multiple stakeholders to engage</li>
+        </ul>
+
+        <h4>Related Prospects</h4>
+        <p>
+            If related profiles were found and analyzed, they'll appear in a dedicated section with:
+        </p>
+        <ul>
+            <li>Profile name and headline</li>
+            <li>Relevance score</li>
+            <li>Fit reasons</li>
+            <li>Potential value</li>
+            <li>Decision power assessment</li>
+            <li>Clickable link to open the profile</li>
+        </ul>
+
+        <h3>4.3 Regenerating Messages</h3>
+        <p>
+            After an initial analysis, you can regenerate messages with different strategy parameters:
+        </p>
+        <ol>
+            <li>Change the Risk Level or Offer Type in the Compose tab</li>
+            <li>Click <strong>"Regenerate Messages"</strong> button</li>
+            <li>New messages will be generated using the cached research data</li>
+        </ol>
+        <div class="success-box">
+            <strong>Time Saver:</strong> Regeneration is much faster (10-15 seconds) because it reuses the profile analysis, company research, and post summaries from the initial analysis.
+        </div>
+
+        <h2 id="messaging">5. Message Generation & Best Practices</h2>
+
+        <h3>5.1 Message Types Explained</h3>
+
+        <h4>Connection Request</h4>
+        <ul>
+            <li>Must be concise (200 chars for free accounts, 400 for premium)</li>
+            <li>Should reference shared context if available</li>
+            <li>Include a clear, low-commitment value proposition</li>
+            <li>Avoid being too salesy or pushy</li>
+        </ul>
+
+        <h4>Short Punchy</h4>
+        <ul>
+            <li>Best for: Busy executives, C-level contacts</li>
+            <li>Length: 2-3 sentences maximum</li>
+            <li>Focus: One key benefit or insight</li>
+        </ul>
+
+        <h4>Credibility-First</h4>
+        <ul>
+            <li>Best for: Prospects who need proof before engaging</li>
+            <li>Lead with: Metrics, case studies, testimonials</li>
+            <li>Example: "We helped [Similar Company] achieve [Result]..."</li>
+        </ul>
+
+        <h4>Insight-Led</h4>
+        <ul>
+            <li>Best for: Thoughtful prospects who value expertise</li>
+            <li>Lead with: Industry insight, trend, or valuable observation</li>
+            <li>Then: Connect insight to your solution</li>
+        </ul>
+
+        <h4>Soft-Ask</h4>
+        <ul>
+            <li>Best for: Prospects who are hesitant to commit</li>
+            <li>Focus: Low-friction request (e.g., "Would you be open to a quick 15-min chat?")</li>
+            <li>Avoid: Asking for a demo or sales call upfront</li>
+        </ul>
+
+        <h3>5.2 Message Sequence Best Practices</h3>
+        <ol>
+            <li><strong>First Message:</strong> Focus on value and relevance, not selling</li>
+            <li><strong>Follow-up 1 (2-3 days):</strong> Add new information or context</li>
+            <li><strong>Follow-up 2 (1 week):</strong> Reference their recent activity or posts</li>
+            <li><strong>Follow-up 3 (2 weeks):</strong> Final attempt with a clear, specific ask</li>
+            <li><strong>Breakup Message:</strong> Polite exit, leave door open for future</li>
+        </ol>
+
+        <h3>5.3 Personalization Tips</h3>
+        <ul>
+            <li><strong>Use Shared Context:</strong> Reference common experiences naturally</li>
+            <li><strong>Reference Posts:</strong> Mention their recent activity or insights</li>
+            <li><strong>Company-Specific:</strong> Reference their company's challenges or opportunities</li>
+            <li><strong>Avoid Over-Personalization:</strong> Don't be creepy or overly specific about private details</li>
+            <li><strong>Keep It Relevant:</strong> Every personalization should connect to your value proposition</li>
+        </ul>
+
+        <h2 id="credits">6. Credits & Billing</h2>
+
+        <h3>6.1 Understanding Credits</h3>
+        <p>
+            Credits are consumed based on the number of tokens used for AI processing. Different operations consume different amounts:
+        </p>
+        <table>
+            <tr>
+                <th>Operation</th>
+                <th>Approximate Tokens</th>
+                <th>Cost (Estimate)</th>
+            </tr>
+            <tr>
+                <td>Profile Extraction</td>
+                <td>500-1,000</td>
+                <td>Low</td>
+            </tr>
+            <tr>
+                <td>Post Summarization</td>
+                <td>1,000-2,000</td>
+                <td>Low-Medium</td>
+            </tr>
+            <tr>
+                <td>Company Research</td>
+                <td>500-1,000</td>
+                <td>Low</td>
+            </tr>
+            <tr>
+                <td>Related Profiles Analysis</td>
+                <td>500-1,000</td>
+                <td>Low</td>
+            </tr>
+            <tr>
+                <td>Full Analysis + Messages</td>
+                <td>3,000-5,000</td>
+                <td>Medium</td>
+            </tr>
+            <tr>
+                <td>Message Regeneration</td>
+                <td>2,000-3,000</td>
+                <td>Low-Medium</td>
+            </tr>
+        </table>
+
+        <h3>6.2 Free Credits</h3>
+        <p>
+            New users receive free credits to get started. The exact amount may vary, but typically includes enough for several profile analyses.
+        </p>
+
+        <h3>6.3 Buying Credits</h3>
+        <ol>
+            <li>Go to the <strong>Settings</strong> tab</li>
+            <li>Click <strong>"Buy More Credits"</strong></li>
+            <li>Select a credit package</li>
+            <li>Choose currency (USD or INR)</li>
+            <li>Complete payment via Stripe</li>
+            <li>Credits are automatically added to your account</li>
+        </ol>
+
+        <h3>6.4 Credit Packages</h3>
+        <p>
+            Multiple packages are available with different credit amounts and pricing. Packages are designed to offer better value for larger purchases.
+        </p>
+
+        <h3>6.5 Credit Tracking</h3>
+        <ul>
+            <li>Your remaining credits are displayed in the Settings tab</li>
+            <li>Credits are deducted after each operation completes</li>
+            <li>If credits run out, you'll be prompted to purchase more</li>
+            <li>Transaction history is available in your account</li>
+        </ul>
+
+        <h3>6.6 Using Your Own API Key</h3>
+        <p>
+            If you prefer to use your own OpenAI API key:
+        </p>
+        <ol>
+            <li>Get an API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI</a></li>
+            <li>Toggle "Use Backend Credits" to OFF in Settings</li>
+            <li>Enter your API key (stored locally, never shared)</li>
+            <li>You'll be billed directly by OpenAI based on their pricing</li>
+        </ol>
+        <div class="warning-box">
+            <strong>Important:</strong> When using your own API key, you're responsible for managing your OpenAI account, billing, and rate limits. The extension will use your key directly for all AI operations.
+        </div>
+
+        <h2 id="best-practices">7. Best Practices</h2>
+
+        <h3>7.1 Profile Analysis</h3>
+        <ul>
+            <li><strong>Analyze Before Connecting:</strong> Always analyze a profile before sending a connection request</li>
+            <li><strong>Review Scores:</strong> Use fit scores to prioritize which prospects to contact first</li>
+            <li><strong>Check Mismatches:</strong> Review disqualifiers to avoid wasting time on poor fits</li>
+            <li><strong>Explore Related Profiles:</strong> Check the Related Prospects section for better targets</li>
+        </ul>
+
+        <h3>7.2 Message Customization</h3>
+        <ul>
+            <li><strong>Review Before Sending:</strong> Always review and customize generated messages</li>
+            <li><strong>Add Personal Touches:</strong> Incorporate your own insights or experiences</li>
+            <li><strong>Test Different Variants:</strong> Try different message styles to see what works best</li>
+            <li><strong>Match Your Voice:</strong> Adjust messages to match your personal communication style</li>
+        </ul>
+
+        <h3>7.3 Outreach Strategy</h3>
+        <ul>
+            <li><strong>Follow Recommendations:</strong> The tool's strategy recommendations are based on data - consider them seriously</li>
+            <li><strong>Respect Timing:</strong> Pay attention to timing suggestions (e.g., don't reach out during holidays)</li>
+            <li><strong>Use Multi-threading:</strong> When recommended, engage multiple stakeholders in the same account</li>
+            <li><strong>Warm-up First:</strong> For high-value prospects, consider the warm-up approach (comment + DM)</li>
+        </ul>
+
+        <h3>7.4 Efficiency Tips</h3>
+        <ul>
+            <li><strong>Batch Analysis:</strong> Analyze multiple profiles, then review results and regenerate messages as needed</li>
+            <li><strong>Use Regeneration:</strong> Don't re-analyze profiles just to change strategy - use the Regenerate button</li>
+            <li><strong>Save Successful Messages:</strong> Copy and save messages that get good responses for future reference</li>
+            <li><strong>Track What Works:</strong> Note which message variants and strategies work best for your ICP</li>
+        </ul>
+
+        <h3>7.5 Compliance & Ethics</h3>
+        <ul>
+            <li><strong>Respect Privacy:</strong> Only use publicly available information</li>
+            <li><strong>Follow LinkedIn's Terms:</strong> Ensure your outreach complies with LinkedIn's terms of service</li>
+            <li><strong>Be Transparent:</strong> Don't misrepresent yourself or your offering</li>
+            <li><strong>Respect Opt-Outs:</strong> If someone asks to be removed, honor that request</li>
+            <li><strong>Provide Value:</strong> Focus on providing value, not just selling</li>
+        </ul>
+
+        <h2 id="troubleshooting">8. Troubleshooting</h2>
+
+        <h3>8.1 Common Issues</h3>
+
+        <h4>Analysis Fails or Takes Too Long</h4>
+        <ul>
+            <li><strong>Check Internet Connection:</strong> Ensure you have a stable internet connection</li>
+            <li><strong>Refresh the Page:</strong> Try refreshing the LinkedIn profile page</li>
+            <li><strong>Check Credits:</strong> Ensure you have sufficient credits (or valid API key)</li>
+            <li><strong>Wait for Completion:</strong> Full analysis can take 30-60 seconds - be patient</li>
+            <li><strong>Try Again:</strong> If it fails, click Analyze again (the button will be re-enabled)</li>
+        </ul>
+
+        <h4>Messages Not Generating</h4>
+        <ul>
+            <li><strong>Check Required Fields:</strong> Ensure Outreach Goal and ICP Definition are filled</li>
+            <li><strong>Verify Profile Capture:</strong> Make sure you've captured your own profile in Settings</li>
+            <li><strong>Check Credits/API Key:</strong> Verify you have credits or a valid API key</li>
+            <li><strong>Review Error Messages:</strong> Check the status badge for specific error messages</li>
+        </ul>
+
+        <h4>Shared Context Not Showing</h4>
+        <ul>
+            <li><strong>Capture Your Profile:</strong> Ensure you've captured your own LinkedIn profile</li>
+            <li><strong>Check for Connections:</strong> Shared context only appears if there are actual connections</li>
+            <li><strong>Low Score:</strong> If shared context score is below 20%, it won't be displayed</li>
+        </ul>
+
+        <h4>Related Profiles Not Appearing</h4>
+        <ul>
+            <li><strong>Not Available:</strong> Some profiles don't have "People also viewed" sections</li>
+            <li><strong>Privacy Settings:</strong> Prospect's privacy settings may hide related profiles</li>
+            <li><strong>Analysis Pending:</strong> Related profiles are analyzed after the main analysis - wait for completion</li>
+        </ul>
+
+        <h4>Credits Not Updating</h4>
+        <ul>
+            <li><strong>Refresh Display:</strong> Credits display updates after each operation</li>
+            <li><strong>Check Payment:</strong> If you just purchased, wait a few seconds for the update</li>
+            <li><strong>Refresh Extension:</strong> Try closing and reopening the side panel</li>
+        </ul>
+
+        <h4>Payment Issues</h4>
+        <ul>
+            <li><strong>Check Stripe Status:</strong> Ensure Stripe payment completed successfully</li>
+            <li><strong>Check Email:</strong> You should receive a confirmation email from Stripe</li>
+            <li><strong>Contact Support:</strong> If payment succeeded but credits not added, contact support at issues@gmail.com</li>
+        </ul>
+
+        <h3>8.2 Browser Compatibility</h3>
+        <ul>
+            <li><strong>Chrome Only:</strong> This extension is designed for Google Chrome</li>
+            <li><strong>Latest Version:</strong> Ensure you're using a recent version of Chrome</li>
+            <li><strong>Extensions Enabled:</strong> Make sure Chrome extensions are enabled</li>
+        </ul>
+
+        <h3>8.3 Getting Help</h3>
+        <p>
+            If you encounter issues not covered here:
+        </p>
+        <ul>
+            <li><strong>Email Support:</strong> issues@gmail.com</li>
+            <li><strong>Include Details:</strong> Describe the issue, steps to reproduce, and any error messages</li>
+            <li><strong>Check Debug Logs:</strong> In Settings > Advanced > Debug Logs, you can see detailed operation logs</li>
+        </ul>
+
+        <h2 id="faq">9. Frequently Asked Questions</h2>
+
+        <h3>Q: How accurate are the fit scores?</h3>
+        <p>
+            Fit scores are based on AI analysis of the prospect's profile, company, and activity. They're estimates based on available data. Always review the detailed reasons and use your judgment. Scores improve when you provide detailed ICP definitions and seller context.
+        </p>
+
+        <h3>Q: Can I use this for cold email outreach?</h3>
+        <p>
+            Yes! The extension generates email-style drafts that you can use for cold email campaigns. However, ensure you comply with email marketing regulations (CAN-SPAM, GDPR, etc.) and have permission to email prospects.
+        </p>
+
+        <h3>Q: How often should I regenerate messages?</h3>
+        <p>
+            Regenerate messages when you want to try a different strategy (risk level or offer type) without re-analyzing the profile. You can regenerate as many times as you want - it's fast and uses cached data.
+        </p>
+
+        <h3>Q: Does the tool store my LinkedIn data?</h3>
+        <p>
+            Your captured profile data is stored locally in your browser. Analysis results are cached locally for faster regeneration. If using backend credits, some data may be stored on our servers for transaction tracking, but we don't share your data with third parties.
+        </p>
+
+        <h3>Q: Can I analyze company pages?</h3>
+        <p>
+            Currently, the tool is optimized for individual LinkedIn profiles. Company page analysis may be added in future updates.
+        </p>
+
+        <h3>Q: What happens if I run out of credits mid-analysis?</h3>
+        <p>
+            The analysis will fail, and you'll be prompted to purchase more credits. You can then retry the analysis. No credits are consumed for failed operations.
+        </p>
+
+        <h3>Q: How do I know if a prospect has LinkedIn Premium?</h3>
+        <p>
+            The tool automatically detects premium status during profile capture and analysis. If a prospect has premium, connection requests can be up to 400 characters. For free accounts, the limit is 200 characters.
+        </p>
+
+        <h3>Q: Can I export analysis results?</h3>
+        <p>
+            Currently, you can copy messages and view results in the extension. Export functionality may be added in future updates. For now, you can manually copy important information.
+        </p>
+
+        <h3>Q: Why are some posts not analyzed?</h3>
+        <p>
+            The tool focuses on "important" posts (not routine updates) and may skip posts that are:
+        </p>
+        <ul>
+            <li>Too old (beyond the analysis window)</li>
+            <li>Not publicly visible</li>
+            <li>In private groups</li>
+            <li>Low engagement or relevance</li>
+        </ul>
+
+        <h3>Q: How do I update my captured profile?</h3>
+        <p>
+            Simply navigate to your LinkedIn profile and click "Capture My Profile" again in Settings. The new data will replace the old cached data.
+        </p>
+
+        <h3>Q: Is my API key secure?</h3>
+        <p>
+            Yes. If you use your own API key, it's stored locally in your browser's storage and never sent to our servers (unless you're using backend credits, in which case we use our own API key). Always keep your API key private and don't share it.
+        </p>
+
+        <h3>Q: Can I use this tool for multiple sales goals?</h3>
+        <p>
+            Yes! You can change your Outreach Goal, ICP Definition, and other settings in the Compose tab for different campaigns or products. Each analysis uses the current settings, so you can analyze the same prospect with different contexts.
+        </p>
+
+        <h3>Q: What's the difference between "Analyze Profile" and "Regenerate Messages"?</h3>
+        <p>
+            <strong>Analyze Profile:</strong> Performs a full analysis including scraping, data extraction, company research, post summarization, and message generation. Takes 30-60 seconds and consumes more credits.
+        </p>
+        <p>
+            <strong>Regenerate Messages:</strong> Uses cached analysis data to generate new messages with different strategy parameters. Takes 10-15 seconds and consumes fewer credits. Only available after an initial analysis.
+        </p>
+
+        <div class="success-box" style="margin-top: 40px;">
+            <h3>Ready to Get Started?</h3>
+            <p>Now that you understand how AI Sales Copilot works, you're ready to start analyzing profiles and generating personalized outreach messages. Remember:</p>
+            <ul>
+                <li>Configure your sales context in the Compose tab</li>
+                <li>Capture your profile in Settings for Shared Context matching</li>
+                <li>Choose your payment method (credits or API key)</li>
+                <li>Start analyzing profiles and generating messages!</li>
+            </ul>
+            <p style="margin-top: 15px;"><strong>Need help?</strong> Contact us at <a href="mailto:issues@gmail.com">issues@gmail.com</a></p>
+        </div>
+
+        <p style="margin-top: 40px; text-align: center; color: #999; font-size: 14px;">
+            AI Sales Copilot for LinkedIn - Version 1.0<br>
+            © 2024 - All rights reserved
+        </p>
+    </div>
+</body>
+</html>
+
