@@ -574,6 +574,24 @@ details>summary::-webkit-details-marker {
     display: none;
 }
 
+/* Button group with status */
+.button-group-with-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.button-group-with-status .primary-btn {
+    flex: 0 0 auto;
+}
+
+.button-group-with-status .status-badge {
+    flex: 0 0 auto;
+    min-width: 80px;
+    text-align: center;
+}
+
 /* Strategy */
 .strategy-controls {
     display: flex;
@@ -728,13 +746,77 @@ details>summary::-webkit-details-marker {
 }
 
 /* Accordion Details */
+.details-accordion {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0;
+    margin: 16px 0;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.details-accordion:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(10, 102, 194, 0.1);
+}
+
+.details-accordion[open] {
+    border-color: var(--accent-color);
+}
+
+.accordion-summary {
+    padding: 14px 16px;
+    background: var(--input-bg);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s ease;
+    user-select: none;
+}
+
+.accordion-summary:hover {
+    background: rgba(10, 102, 194, 0.1);
+}
+
+.accordion-summary::-webkit-details-marker {
+    display: none;
+}
+
+.accordion-summary::before {
+    content: '▼';
+    font-size: 10px;
+    color: var(--accent-color);
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.details-accordion[open] .accordion-summary::before {
+    transform: rotate(180deg);
+}
+
 .accordion-body {
-    padding: 8px 0;
+    padding: 16px;
+    background: var(--bg-color);
+    border-top: 1px solid var(--border-color);
 }
 
 .accordion-body h4 {
-    margin: 8px 0 4px 0;
+    margin: 16px 0 8px 0;
     color: var(--accent-color);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.accordion-body h4:first-child {
+    margin-top: 0;
 }
 
 ul {
@@ -751,10 +833,18 @@ li {
 /* Status & Logs */
 .status-badge {
     background: var(--input-bg);
-    padding: 4px 8px;
+    padding: 6px 12px;
     border-radius: 12px;
-    font-size: 11px;
-    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.status-badge:not(:empty) {
+    display: inline-block;
 }
 
 .status-pill {
@@ -1175,6 +1265,238 @@ pre {
 
 .close-btn:hover {
     color: var(--accent-color);
+}
+
+/* Onboarding Modal Styles */
+.onboarding-content {
+    max-width: 700px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.onboarding-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.onboarding-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--text-primary);
+}
+
+.onboarding-body {
+    flex: 1;
+    min-height: 400px;
+    position: relative;
+    overflow: hidden;
+}
+
+.onboarding-step {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.onboarding-step.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.step-icon {
+    font-size: 48px;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.onboarding-step h3 {
+    font-size: 18px;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+    text-align: center;
+}
+
+.onboarding-step p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.feature-highlights {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.feature-item {
+    background: var(--input-bg);
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.step-instructions {
+    text-align: left;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin: 20px 0;
+    padding-left: 20px;
+}
+
+.step-instructions li {
+    margin-bottom: 8px;
+}
+
+.step-instructions strong {
+    color: var(--accent-color);
+}
+
+.info-box-onboarding {
+    background: rgba(10, 102, 194, 0.1);
+    border: 1px solid var(--accent-color);
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.info-box-onboarding strong {
+    color: var(--accent-color);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.option-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.option-card {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+.option-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(10, 102, 194, 0.1);
+}
+
+.option-header {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.option-card ul {
+    margin: 12px 0;
+    padding-left: 20px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.option-card li {
+    margin-bottom: 6px;
+}
+
+.option-note {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.tips-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.tip-item {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.tip-item strong {
+    color: var(--accent-color);
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.tip-item p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+    text-align: left;
+}
+
+.onboarding-footer {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.step-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.step-dot.active {
+    background: var(--accent-color);
+    width: 24px;
+    border-radius: 4px;
+}
+
+.onboarding-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.onboarding-actions .primary-btn,
+.onboarding-actions .secondary-btn {
+    flex: 1;
+    max-width: 150px;
 }
 
 .pricing-cards {

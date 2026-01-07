@@ -22,7 +22,6 @@
             <div id="tab-compose" class="view active">
                 <header class="section-header">
                     <h2>Outreach Setup</h2>
-                    <div class="status-badge" id="statusBadge">Ready</div>
                 </header>
 
                 <section class="input-group">
@@ -77,7 +76,10 @@
                     </div>
                 </section>
 
-                <button id="analyzeBtn" class="primary-btn">Analyze Profile</button>
+                <div class="button-group-with-status">
+                    <button id="analyzeBtn" class="primary-btn">Analyze Profile</button>
+                    <div class="status-badge" id="analyzeStatusBadge">Ready</div>
+                </div>
                 <button id="regenerateBtn" class="secondary-btn hidden" style="margin-top: 8px;">Regenerate Messages (Reuse Research)</button>
             </div>
 
@@ -137,8 +139,8 @@
                     </div>
 
                     <!-- Details Accordions -->
-                    <details class="details-accordion">
-                        <summary>Analysis Details</summary>
+                    <details class="details-accordion" open>
+                        <summary class="accordion-summary">📊 Analysis Details</summary>
                         <div class="accordion-body">
                             <h4>Fit Reasons</h4>
                             <ul id="fitReasonsList"></ul>
@@ -158,8 +160,8 @@
                     </details>
 
                     <!-- Transparency Layer -->
-                    <details class="details-accordion">
-                        <summary>Transparency & Guidance</summary>
+                    <details class="details-accordion" open>
+                        <summary class="accordion-summary">💡 Transparency & Guidance</summary>
                         <div class="accordion-body">
                             <div class="confidence-indicator">
                                 <strong>Confidence:</strong> <span id="confidenceBadge">--</span>
@@ -174,8 +176,8 @@
                     </details>
 
                     <!-- Related Profiles -->
-                    <details class="details-accordion">
-                        <summary>Related Prospects</summary>
+                    <details class="details-accordion" open>
+                        <summary class="accordion-summary">👥 Related Prospects</summary>
                         <div class="accordion-body">
                             <div id="relatedProfilesContainer">
                                 <p class="empty-state">No related profiles analyzed yet.</p>
@@ -209,7 +211,7 @@
 
                         <div class="settings-divider"></div>
 
-                        <div class="settings-item" id="creditsSection">
+                        <div class="settings-item hidden" id="creditsSection">
                             <div class="credits-display-modern">
                                 <div class="credits-header">
                                     <span class="credits-label">Available Credits</span>
@@ -219,7 +221,7 @@
                             </div>
                         </div>
 
-                        <div class="settings-item hidden" id="apiKeySection">
+                        <div class="settings-item" id="apiKeySection">
                             <label class="settings-label">OpenAI API Key</label>
                             <input type="password" id="apiKey" placeholder="sk-..." class="settings-input" />
                             <small class="settings-hint">Stored locally. Required when not using backend credits.</small>
@@ -273,7 +275,7 @@
                                     <div class="contact-details">
                                         <span class="contact-label-modern">Email Support</span>
                                         <div class="contact-value-modern">
-                                            <a href="mailto:issues@gmail.com" class="contact-link-modern" id="supportEmail">issues@gmail.com</a>
+                                            <a href="mailto:manish.neo@gmail.com" class="contact-link-modern" id="supportEmail">manish.neo@gmail.com</a>
                                             <button class="copy-email-btn-modern" title="Copy email address">📋</button>
                                         </div>
                                     </div>
@@ -314,6 +316,134 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Onboarding Welcome Modal -->
+    <div id="onboardingModal" class="modal hidden">
+        <div class="modal-content onboarding-content">
+            <div class="onboarding-header">
+                <h2>Welcome to AI Sales Copilot! 🚀</h2>
+                <button id="closeOnboardingModal" class="close-btn">&times;</button>
+            </div>
+            
+            <div class="onboarding-body">
+                <!-- Step 1: Welcome -->
+                <div class="onboarding-step active" data-step="1">
+                    <div class="step-icon">👋</div>
+                    <h3>Welcome!</h3>
+                    <p>AI Sales Copilot helps you create personalized LinkedIn outreach messages by analyzing prospect profiles and generating tailored connection requests and emails.</p>
+                    <div class="feature-highlights">
+                        <div class="feature-item">✨ AI-powered profile analysis</div>
+                        <div class="feature-item">📝 Personalized message generation</div>
+                        <div class="feature-item">🎯 ICP matching & fit scoring</div>
+                        <div class="feature-item">💡 Transparency & guidance</div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Setup Profile -->
+                <div class="onboarding-step" data-step="2">
+                    <div class="step-icon">👤</div>
+                    <h3>Step 1: Capture Your Profile</h3>
+                    <p>To enable "Shared Context" matching with prospects, you need to capture your LinkedIn profile first.</p>
+                    <ol class="step-instructions">
+                        <li>Go to the <strong>Settings</strong> tab</li>
+                        <li>Navigate to your own LinkedIn profile page</li>
+                        <li>Click <strong>"Capture My Profile"</strong></li>
+                        <li>Wait for the analysis to complete</li>
+                    </ol>
+                    <div class="info-box-onboarding">
+                        <strong>💡 Why this matters:</strong> This helps identify shared connections, common experiences, and geographic overlaps with prospects for more personalized messaging.
+                    </div>
+                </div>
+
+                <!-- Step 3: Configure Credits/API Key -->
+                <div class="onboarding-step" data-step="3">
+                    <div class="step-icon">⚙️</div>
+                    <h3>Step 2: Configure Credits</h3>
+                    <p>Choose how you want to pay for AI analysis:</p>
+                    <div class="option-cards">
+                        <div class="option-card">
+                            <div class="option-header">💳 Use Backend Credits (Recommended)</div>
+                            <ul>
+                                <li>✅ No API key needed</li>
+                                <li>✅ Free credits to start</li>
+                                <li>✅ Easy credit management</li>
+                                <li>✅ Secure payment via Stripe</li>
+                            </ul>
+                            <p class="option-note">Toggle "Use Backend Credits" ON in Settings</p>
+                        </div>
+                        <div class="option-card">
+                            <div class="option-header">🔑 Use Your Own API Key</div>
+                            <ul>
+                                <li>✅ Use your OpenAI API key</li>
+                                <li>✅ Direct billing from OpenAI</li>
+                                <li>✅ More control over costs</li>
+                            </ul>
+                            <p class="option-note">Toggle "Use Backend Credits" OFF and enter your API key</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Analyze First Prospect -->
+                <div class="onboarding-step" data-step="4">
+                    <div class="step-icon">🎯</div>
+                    <h3>Step 3: Analyze Your First Prospect</h3>
+                    <p>Ready to generate personalized messages? Here's how:</p>
+                    <ol class="step-instructions">
+                        <li>Navigate to a LinkedIn prospect's profile page</li>
+                        <li>Open the extension (click the icon in your toolbar)</li>
+                        <li>Fill in the <strong>Outreach Goal</strong> and <strong>ICP Definition</strong></li>
+                        <li>Optionally configure your offer and proof points</li>
+                        <li>Click <strong>"Analyze Profile"</strong></li>
+                        <li>View results in the <strong>Results</strong> tab</li>
+                    </ol>
+                    <div class="info-box-onboarding">
+                        <strong>💡 Pro Tip:</strong> The more details you provide about your goal and ICP, the better the AI can personalize the messages!
+                    </div>
+                </div>
+
+                <!-- Step 5: Ready to Start -->
+                <div class="onboarding-step" data-step="5">
+                    <div class="step-icon">🎉</div>
+                    <h3>You're All Set!</h3>
+                    <p>You now know the basics. Here are some quick tips:</p>
+                    <div class="tips-grid">
+                        <div class="tip-item">
+                            <strong>📊 Results Tab</strong>
+                            <p>View fit scores, generated messages, and detailed analysis</p>
+                        </div>
+                        <div class="tip-item">
+                            <strong>🔄 Regenerate</strong>
+                            <p>Try different risk levels or offer types without re-analyzing</p>
+                        </div>
+                        <div class="tip-item">
+                            <strong>👥 Related Prospects</strong>
+                            <p>Discover similar prospects from "People also viewed"</p>
+                        </div>
+                        <div class="tip-item">
+                            <strong>📚 Documentation</strong>
+                            <p>Access full documentation from Settings → Help & Documentation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="onboarding-footer">
+                <div class="step-indicators">
+                    <span class="step-dot active" data-step="1"></span>
+                    <span class="step-dot" data-step="2"></span>
+                    <span class="step-dot" data-step="3"></span>
+                    <span class="step-dot" data-step="4"></span>
+                    <span class="step-dot" data-step="5"></span>
+                </div>
+                <div class="onboarding-actions">
+                    <button id="onboardingPrev" class="secondary-btn" style="display: none;">Previous</button>
+                    <button id="onboardingNext" class="primary-btn">Next</button>
+                    <button id="onboardingSkip" class="secondary-btn" style="display: none;">Skip Tutorial</button>
+                    <button id="onboardingStart" class="primary-btn" style="display: none;">Get Started</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Payment Modal -->

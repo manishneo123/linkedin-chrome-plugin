@@ -24,9 +24,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const copyEmailBtn = document.querySelector('.copy-email-btn-modern');
     const supportEmail = document.getElementById('supportEmail');
     const openDocumentationBtn = document.getElementById('openDocumentationBtn');
+    
+    // Onboarding elements
+    const onboardingModal = document.getElementById('onboardingModal');
+    const closeOnboardingModal = document.getElementById('closeOnboardingModal');
+    const onboardingNext = document.getElementById('onboardingNext');
+    const onboardingPrev = document.getElementById('onboardingPrev');
+    const onboardingSkip = document.getElementById('onboardingSkip');
+    const onboardingStart = document.getElementById('onboardingStart');
+    const onboardingSteps = document.querySelectorAll('.onboarding-step');
+    const stepDots = document.querySelectorAll('.step-dot');
 
     // Status
-    const statusBadge = document.getElementById('statusBadge');
+    const analyzeStatusBadge = document.getElementById('analyzeStatusBadge');
     const senderProfileStatus = document.getElementById('senderProfileStatus');
     const cachedProfilePreview = document.getElementById('cachedProfilePreview');
 
@@ -90,12 +100,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const settingsStatusIndicator = document.getElementById('settingsStatusIndicator');
 
     function updateStatus(msg, showInSettings = false) {
-        if (statusBadge) {
-        statusBadge.textContent = msg;
+        // Update analyze status badge (beside Analyze Profile button)
+        if (!showInSettings && analyzeStatusBadge) {
+            analyzeStatusBadge.textContent = msg;
         }
-        log(`Status: ${msg}`);
         
-        // Also update settings status if requested
+        // Update settings status indicator (for Capture Profile button)
         if (showInSettings && settingsStatusIndicator) {
             settingsStatusIndicator.textContent = msg;
             settingsStatusIndicator.style.display = 'block';
@@ -110,12 +120,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }, 3000);
             }
         }
+        
+        log(`Status: ${msg}`);
     }
 
     log("Extension loaded. Initializing...");
 
     // === Backend Configuration ===
-    const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
+    //const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
+    const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
     let userId = null;
     let apiKey = null;
 
@@ -229,11 +242,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function updateCreditsDisplay() {
         const useBackend = useBackendCreditsCheckbox.checked;
         if (!useBackend) {
-            creditsSection.style.display = 'none';
+            creditsSection.classList.add('hidden');
             return;
         }
         
-        creditsSection.style.display = 'block';
+        creditsSection.classList.remove('hidden');
         const { remaining, used, balance } = await getCredits();
         const remainingFormatted = remaining.toLocaleString();
         
@@ -411,6 +424,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             try {
                 const currentApiKey = await getApiKey();
+                // Get user ID for checkout session
+                const currentUserId = await getUserId();
+                
                 const response = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
                     method: 'POST',
                     headers: {
@@ -419,13 +435,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     },
                     body: JSON.stringify({
                         packageId: packageId,
+                        userId: currentUserId,
                         currency: currentCurrency
                     })
                 });
                 
-                if (!response.ok) throw new Error('Failed to create checkout session');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to create checkout session');
+                }
                 
                 const data = await response.json();
+                
                 
                 // Open Stripe checkout in a new window
                 const checkoutWindow = window.open(data.url, '_blank', 'width=600,height=700');
@@ -438,7 +459,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         setTimeout(async () => {
                             await updateCreditsDisplay();
                             paymentModal.classList.add('hidden');
-                            alert('Payment successful! Credits have been added to your account.');
+                            //alert('Payment successful! Credits have been added to your account.');
                             log('[Payment] Credits updated after payment');
                         }, 2000);
                     }
@@ -477,12 +498,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const useBackend = useBackendCreditsCheckbox.checked;
         await chrome.storage.local.set({ use_backend_credits: useBackend });
         
+        // Update visibility using classList to properly handle .hidden class
         if (useBackend) {
-            creditsSection.style.display = 'block';
-            apiKeySection.style.display = 'none';
+            creditsSection.classList.remove('hidden');
+            apiKeySection.classList.add('hidden');
         } else {
-            creditsSection.style.display = 'none';
-            apiKeySection.style.display = 'block';
+            creditsSection.classList.add('hidden');
+            apiKeySection.classList.remove('hidden');
         }
         
         await updateCreditsDisplay();
@@ -491,20 +513,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     // === Check for cached analysis on load ===
     async function checkAndShowRegenerateButton() {
         try {
+            // Hide by default
+            regenerateBtn.classList.add('hidden');
+            
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (tab && tab.url.includes('linkedin.com/')) {
+            if (tab && tab.url && tab.url.includes('linkedin.com/')) {
                 const cached = await checkCachedAnalysis(tab.url);
                 if (cached) {
                     regenerateBtn.classList.remove('hidden');
                     log("[Cache] Showing regenerate button - cached analysis available");
                 } else {
                     regenerateBtn.classList.add('hidden');
+                    log("[Cache] No cached analysis - hiding regenerate button");
                 }
+            } else {
+                // Not on LinkedIn page, hide button
+                regenerateBtn.classList.add('hidden');
             }
         } catch (e) {
-            // Ignore errors
+            // On error, hide the button
+            regenerateBtn.classList.add('hidden');
+            log(`[Cache] Error checking cache: ${e.message}`);
         }
     }
+    
+    // Hide button initially
+    regenerateBtn.classList.add('hidden');
     
     // Check on load
     checkAndShowRegenerateButton();
@@ -525,17 +559,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (stored.risk_level) riskLevelInput.value = stored.risk_level;
     if (stored.offer_type) offerTypeInput.value = stored.offer_type;
     
-    // Load backend credits setting
+    // Initialize backend credits toggle and API key section visibility
     if (stored.use_backend_credits !== undefined) {
         useBackendCreditsCheckbox.checked = stored.use_backend_credits;
-        if (stored.use_backend_credits) {
-            creditsSection.style.display = 'block';
-            apiKeySection.style.display = 'none';
-        } else {
-            creditsSection.style.display = 'none';
-            apiKeySection.style.display = 'block';
-        }
+    } else {
+        // Default to false (use own API key) if not set
+        useBackendCreditsCheckbox.checked = false;
     }
+    
+    // Set visibility based on checkbox state - use classList to properly handle .hidden class
+    const useBackend = useBackendCreditsCheckbox.checked;
+    if (useBackend) {
+        creditsSection.classList.remove('hidden');
+        apiKeySection.classList.add('hidden');
+    } else {
+        creditsSection.classList.add('hidden');
+        apiKeySection.classList.remove('hidden');
+    }
+    
     await updateCreditsDisplay();
 
     if (stored.sender_profile_cache) {
@@ -574,6 +615,96 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     log("Settings loaded.");
 
+    // === Onboarding Logic ===
+    let currentOnboardingStep = 1;
+    const totalOnboardingSteps = 5;
+
+    async function checkAndShowOnboarding() {
+        const stored = await chrome.storage.local.get('onboarding_completed');
+        if (!stored.onboarding_completed) {
+            // First time user - show onboarding
+            showOnboardingStep(1);
+            onboardingModal.classList.remove('hidden');
+        }
+    }
+
+    function showOnboardingStep(step) {
+        currentOnboardingStep = step;
+        
+        // Hide all steps
+        onboardingSteps.forEach(s => s.classList.remove('active'));
+        
+        // Show current step
+        const currentStepEl = document.querySelector(`.onboarding-step[data-step="${step}"]`);
+        if (currentStepEl) {
+            currentStepEl.classList.add('active');
+        }
+        
+        // Update step indicators
+        stepDots.forEach((dot, index) => {
+            if (index + 1 === step) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+        
+        // Update navigation buttons
+        onboardingPrev.style.display = step > 1 ? 'block' : 'none';
+        onboardingNext.style.display = step < totalOnboardingSteps ? 'block' : 'none';
+        onboardingStart.style.display = step === totalOnboardingSteps ? 'block' : 'none';
+        onboardingSkip.style.display = step < totalOnboardingSteps ? 'block' : 'none';
+    }
+
+    function nextOnboardingStep() {
+        if (currentOnboardingStep < totalOnboardingSteps) {
+            showOnboardingStep(currentOnboardingStep + 1);
+        }
+    }
+
+    function prevOnboardingStep() {
+        if (currentOnboardingStep > 1) {
+            showOnboardingStep(currentOnboardingStep - 1);
+        }
+    }
+
+    async function completeOnboarding() {
+        await chrome.storage.local.set({ onboarding_completed: true });
+        onboardingModal.classList.add('hidden');
+        log("Onboarding completed.");
+    }
+
+    // Onboarding event listeners
+    if (onboardingNext) {
+        onboardingNext.addEventListener('click', nextOnboardingStep);
+    }
+    
+    if (onboardingPrev) {
+        onboardingPrev.addEventListener('click', prevOnboardingStep);
+    }
+    
+    if (onboardingStart) {
+        onboardingStart.addEventListener('click', completeOnboarding);
+    }
+    
+    if (onboardingSkip) {
+        onboardingSkip.addEventListener('click', completeOnboarding);
+    }
+    
+    if (closeOnboardingModal) {
+        closeOnboardingModal.addEventListener('click', completeOnboarding);
+    }
+    
+    // Allow clicking step dots to jump to steps
+    stepDots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            showOnboardingStep(index + 1);
+        });
+    });
+
+    // Check and show onboarding on load
+    checkAndShowOnboarding();
+
     // === Auto-Save ===
     const saveSetting = (key, val) => chrome.storage.local.set({ [key]: val });
 
@@ -598,6 +729,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (view.id === targetId) view.classList.remove('hidden');
             else classListAdd(view, 'hidden'); // safe add
         });
+        
+        // Check regenerate button visibility when switching to compose tab
+        if (targetId === 'tab-compose') {
+            checkAndShowRegenerateButton();
+        }
     }
 
     // Safe helper to avoid null errors on classList
@@ -2754,7 +2890,7 @@ Also generate complete sequences:
             updateStatus("Complete!");
             log("Analysis complete.");
             
-            // Show regenerate button
+            // Show regenerate button (analysis is now cached)
             regenerateBtn.classList.remove('hidden');
 
         } catch (e) {
