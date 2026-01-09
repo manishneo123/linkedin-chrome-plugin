@@ -31,13 +31,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             const isPremium = detectPremiumSubscription();
             console.log('[ContentScript] ✓ Premium status:', isPremium);
 
+            // Extract profile name
+            let profileName = null;
+            try {
+                const nameElement = document.querySelector('h1.text-heading-xlarge, h1.pv-text-details__left-panel h1, .pv-text-details__left-panel h1, h1[class*="text-heading"]');
+                if (nameElement) {
+                    profileName = nameElement.innerText?.trim() || null;
+                } else {
+                    // Fallback: extract from profile text (first line)
+                    const lines = profileText.split('\n').filter(line => line.trim().length > 0);
+                    if (lines.length > 0) {
+                        profileName = lines[0].trim()
+                            .replace(/\s*View profile.*$/i, '')
+                            .replace(/\s*LinkedIn.*$/i, '')
+                            .trim();
+                    }
+                }
+                if (profileName && profileName.length > 100) {
+                    profileName = profileName.substring(0, 100);
+                }
+            } catch (e) {
+                console.log('[ContentScript] ⚠ Could not extract profile name:', e.message);
+            }
+            console.log('[ContentScript] ✓ Profile name:', profileName || 'Not found');
+
             sendResponse({
                 success: true,
                 data: profileText,
                 activity: activity,
                 company: companyInfo,
                 relatedProfiles: relatedProfiles,
-                isPremium: isPremium
+                isPremium: isPremium,
+                profileName: profileName
             });
         } catch (e) {
             console.error('[ContentScript] ✗ Error during scraping:', e);
@@ -503,21 +528,71 @@ async function loadRecentActivityPage() {
                 const timeElement = item.querySelector('time');
                 const timestamp = timeElement?.getAttribute('datetime') || timeElement?.innerText?.trim() || null;
 
-                // Extract engagement metrics
+                // Extract engagement metrics with improved selectors
                 const engagement = {
                     likes: 0,
                     comments: 0,
                     shares: 0
                 };
 
+                // Try multiple methods to extract engagement
                 const engagementText = item.innerText || '';
-                const likesMatch = engagementText.match(/(\d+)\s*(?:like|reaction)/i);
+                
+                // Method 1: Regex from text
+                const likesMatch = engagementText.match(/(\d+)\s*(?:like|reaction|👍)/i);
                 const commentsMatch = engagementText.match(/(\d+)\s*comment/i);
                 const sharesMatch = engagementText.match(/(\d+)\s*share/i);
 
                 if (likesMatch) engagement.likes = parseInt(likesMatch[1]);
                 if (commentsMatch) engagement.comments = parseInt(commentsMatch[1]);
                 if (sharesMatch) engagement.shares = parseInt(sharesMatch[1]);
+                
+                // Method 2: Look for specific engagement button elements
+                const likeButton = item.querySelector('button[aria-label*="like"], button[aria-label*="reaction"], .social-actions-button--reactions');
+                const commentButton = item.querySelector('button[aria-label*="comment"], .social-actions-button--comments');
+                const shareButton = item.querySelector('button[aria-label*="share"], .social-actions-button--shares');
+                
+                if (likeButton) {
+                    const likeText = likeButton.innerText || likeButton.getAttribute('aria-label') || '';
+                    const likeNum = likeText.match(/(\d+)/);
+                    if (likeNum && !engagement.likes) {
+                        engagement.likes = parseInt(likeNum[1]);
+                    }
+                }
+                
+                if (commentButton) {
+                    const commentText = commentButton.innerText || commentButton.getAttribute('aria-label') || '';
+                    const commentNum = commentText.match(/(\d+)/);
+                    if (commentNum && !engagement.comments) {
+                        engagement.comments = parseInt(commentNum[1]);
+                    }
+                }
+                
+                if (shareButton) {
+                    const shareText = shareButton.innerText || shareButton.getAttribute('aria-label') || '';
+                    const shareNum = shareText.match(/(\d+)/);
+                    if (shareNum && !engagement.shares) {
+                        engagement.shares = parseInt(shareNum[1]);
+                    }
+                }
+                
+                // Method 3: Look for social action bar
+                const socialBar = item.querySelector('.social-actions-bar, .feed-shared-social-action-bar, .update-components-social-actions');
+                if (socialBar) {
+                    const barText = socialBar.innerText || '';
+                    if (!engagement.likes) {
+                        const barLikes = barText.match(/(\d+)\s*(?:like|reaction)/i);
+                        if (barLikes) engagement.likes = parseInt(barLikes[1]);
+                    }
+                    if (!engagement.comments) {
+                        const barComments = barText.match(/(\d+)\s*comment/i);
+                        if (barComments) engagement.comments = parseInt(barComments[1]);
+                    }
+                    if (!engagement.shares) {
+                        const barShares = barText.match(/(\d+)\s*share/i);
+                        if (barShares) engagement.shares = parseInt(barShares[1]);
+                    }
+                }
 
                 const postEntry = {
                     text: text.substring(0, 3000), // Increased limit

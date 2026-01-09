@@ -3,7 +3,7 @@ AI Sales Copilot for LinkedIn - Product Description
 OVERVIEW
 ========
 
-AI Sales Copilot is an intelligent Chrome extension that transforms LinkedIn outreach from manual research into automated, data-driven sales intelligence. Built with GPT-4 AI technology, the tool analyzes LinkedIn profiles in real-time, extracts comprehensive prospect data, and generates highly personalized outreach messages that dramatically improve response rates.
+AI Sales Copilot is an intelligent Chrome extension that transforms LinkedIn outreach from manual research into automated, data-driven sales intelligence. Built with AI technology, the tool analyzes LinkedIn profiles in real-time, extracts comprehensive prospect data, and generates highly personalized outreach messages that dramatically improve response rates.
 
 The extension serves as a personal sales intelligence assistant, combining AI analysis with deep LinkedIn integration to provide actionable insights, strategic recommendations, and ready-to-send messages tailored to specific sales goals and ideal customer profiles.
 
@@ -98,16 +98,6 @@ Users review: Fit and Influence scores, Shared Context badges, recommended appro
 
 Users can: copy messages to clipboard, regenerate with different parameters, review detailed analysis, navigate to related prospects, export or save results.
 
-TECHNICAL ARCHITECTURE
-======================
-
-Frontend: Chrome Extension APIs, HTML5/CSS3/JavaScript, responsive design, local storage.
-
-Backend: Node.js/Express REST API, MySQL database, OpenAI GPT-4 integration, Stripe payments, secure authentication, rate limiting.
-
-AI Technology: GPT-4 and GPT-4o-mini models, structured data extraction, natural language generation, context-aware personalization, multi-step reasoning.
-
-Security: Local storage for sensitive data, encrypted communication, secure authentication, no third-party data sharing, GDPR compliance.
 
 USE CASES
 =========

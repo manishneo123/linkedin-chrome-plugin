@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const copyEmailBtn = document.querySelector('.copy-email-btn-modern');
     const supportEmail = document.getElementById('supportEmail');
     const openDocumentationBtn = document.getElementById('openDocumentationBtn');
+    const userIdDisplay = document.getElementById('userIdDisplay');
+    const copyUserIdBtn = document.getElementById('copyUserIdBtn');
     
     // Onboarding elements
     const onboardingModal = document.getElementById('onboardingModal');
@@ -39,12 +41,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     const analyzeStatusBadge = document.getElementById('analyzeStatusBadge');
     const senderProfileStatus = document.getElementById('senderProfileStatus');
     const cachedProfilePreview = document.getElementById('cachedProfilePreview');
+    const contentStatusBadge = document.getElementById('contentStatusBadge');
+    
+    // Content Copilot elements
+    const generateContentBtn = document.getElementById('generateContentBtn');
+    const contentTypeSelect = document.getElementById('contentType');
+    const contentTopicInput = document.getElementById('contentTopic');
+    const contentToneSelect = document.getElementById('contentTone');
+    const contentCTAInput = document.getElementById('contentCTA');
+    const includePersonalStorySelect = document.getElementById('includePersonalStory');
+    const generatedContentSection = document.getElementById('generatedContentSection');
+    const generatedContentText = document.getElementById('generatedContentText');
+    const copyContentBtn = document.getElementById('copyContentBtn');
+    const regenerateContentBtn = document.getElementById('regenerateContentBtn');
+    const contentCharCount = document.getElementById('contentCharCount');
+    const contentWordCount = document.getElementById('contentWordCount');
+    const contentReadTime = document.getElementById('contentReadTime');
+    const contentStrategyTips = document.getElementById('contentStrategyTips');
+    const contentLibrary = document.getElementById('contentLibrary');
+    const storedAnalysesList = document.getElementById('storedAnalysesList');
+    
+    // Content analysis elements
+    const analyzeProfileContentBtn = document.getElementById('analyzeProfileContentBtn');
+    const contentAnalysisStatusBadge = document.getElementById('contentAnalysisStatusBadge');
+    const contentAnalysisResults = document.getElementById('contentAnalysisResults');
+    const analyzedTopicsList = document.getElementById('analyzedTopicsList');
+    const analyzedContentExamples = document.getElementById('analyzedContentExamples');
+    const useAnalyzedTopicsBtn = document.getElementById('useAnalyzedTopicsBtn');
+    const suggestTopicsBtn = document.getElementById('suggestTopicsBtn');
+    const addCustomTopicBtn = document.getElementById('addCustomTopicBtn');
+    const clearTopicBtn = document.getElementById('clearTopicBtn');
+    const suggestedTopicsContainer = document.getElementById('suggestedTopicsContainer');
+    const customTopicsContainer = document.getElementById('customTopicsContainer');
+    const customTopicsList = document.getElementById('customTopicsList');
+    const newCustomTopicInput = document.getElementById('newCustomTopicInput');
+    const saveCustomTopicBtn = document.getElementById('saveCustomTopicBtn');
+    const cancelCustomTopicBtn = document.getElementById('cancelCustomTopicBtn');
+    
+    // Store analyzed content references
+    let analyzedContentReferences = null;
 
+    // Product Navigation
+    const productBtns = document.querySelectorAll('.product-btn');
+    const marketingNav = document.getElementById('marketing-nav');
+    const contentNav = document.getElementById('content-nav');
+    
     // Container Views
     const tabBtns = document.querySelectorAll('.nav-item');
     const views = document.querySelectorAll('.view');
     const emptyState = document.getElementById('emptyState');
     const resultsContent = document.getElementById('resultsContent');
+    
+    // Current product state
+    let currentProduct = 'marketing';
 
     // Result Elements (Scores)
     const scoreCircle = document.getElementById('scoreCircle');
@@ -127,8 +176,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     log("Extension loaded. Initializing...");
 
     // === Backend Configuration ===
-    //const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
-    const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
+    const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
+    //const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
     let userId = null;
     let apiKey = null;
 
@@ -615,9 +664,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     log("Settings loaded.");
 
+    // === Load and Display User ID ===
+    async function loadAndDisplayUserId() {
+        try {
+            const currentUserId = await getUserId();
+            if (userIdDisplay) {
+                userIdDisplay.textContent = currentUserId;
+            }
+        } catch (error) {
+            log(`Error loading user ID: ${error.message}`);
+            if (userIdDisplay) {
+                userIdDisplay.textContent = 'Error loading user ID';
+            }
+        }
+    }
+    
+    // Load user ID on initialization
+    loadAndDisplayUserId();
+
+    // === Copy User ID ===
+    if (copyUserIdBtn) {
+        copyUserIdBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const userId = await getUserId();
+            const success = await copyToClipboard(userId);
+            
+            if (success) {
+                copyUserIdBtn.innerHTML = '✓';
+                copyUserIdBtn.style.color = '#10b981';
+                setTimeout(() => {
+                    copyUserIdBtn.innerHTML = '📋';
+                    copyUserIdBtn.style.color = '';
+                }, 2000);
+            } else {
+                copyUserIdBtn.innerHTML = '✗';
+                copyUserIdBtn.style.color = '#ef4444';
+                setTimeout(() => {
+                    copyUserIdBtn.innerHTML = '📋';
+                    copyUserIdBtn.style.color = '';
+                }, 2000);
+            }
+        });
+    }
+
     // === Onboarding Logic ===
     let currentOnboardingStep = 1;
-    const totalOnboardingSteps = 5;
+    const totalOnboardingSteps = 8;
 
     async function checkAndShowOnboarding() {
         const stored = await chrome.storage.local.get('onboarding_completed');
@@ -716,13 +810,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     riskLevelInput.addEventListener('change', () => saveSetting('risk_level', riskLevelInput.value));
     offerTypeInput.addEventListener('change', () => saveSetting('offer_type', offerTypeInput.value));
 
-    // === Navigation Logic ===
-    function showTab(targetId) {
-        // Update Nav Buttons
-        tabBtns.forEach(btn => {
-            if (btn.dataset.target === targetId) btn.classList.add('active');
-            else btn.classList.remove('active');
+    // === Product Navigation Logic ===
+    function showProduct(product) {
+        currentProduct = product;
+        
+        // Update Product Buttons
+        productBtns.forEach(btn => {
+            if (btn.dataset.product === product || (product === 'settings' && btn.dataset.target === 'tab-settings')) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
         });
+        
+        // Show/hide product-specific navs
+        if (product === 'marketing') {
+            if (marketingNav) marketingNav.classList.remove('hidden');
+            if (contentNav) contentNav.classList.add('hidden');
+            // Show first marketing tab
+            showTab('tab-compose');
+        } else if (product === 'content') {
+            if (marketingNav) marketingNav.classList.add('hidden');
+            if (contentNav) contentNav.classList.remove('hidden');
+            // Show first content tab (Inspire) and set it as active
+            if (contentNav) {
+                contentNav.querySelectorAll('.nav-item').forEach((btn, index) => {
+                    if (index === 0) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+            showTab('tab-inspire');
+        } else if (product === 'settings') {
+            if (marketingNav) marketingNav.classList.add('hidden');
+            if (contentNav) contentNav.classList.add('hidden');
+            // Show settings tab
+            showTab('tab-settings');
+        }
+    }
+    
+    // === Tab Navigation Logic (within products) ===
+    function showTab(targetId) {
+        // Update Nav Buttons (only for current product's nav, or if settings)
+        if (targetId !== 'tab-settings') {
+            const currentNav = currentProduct === 'marketing' ? marketingNav : contentNav;
+            if (currentNav) {
+                currentNav.querySelectorAll('.nav-item').forEach(btn => {
+                    if (btn.dataset.target === targetId) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            }
+        }
 
         // Update Views
         views.forEach(view => {
@@ -734,6 +874,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (targetId === 'tab-compose') {
             checkAndShowRegenerateButton();
         }
+        
+        // Load user ID when switching to settings tab
+        if (targetId === 'tab-settings') {
+            loadAndDisplayUserId();
+        }
+        
+        // Load content library and stored analyses when switching to content tabs
+        if (targetId === 'tab-inspire') {
+            loadStoredAnalyses();
+        } else if (targetId === 'tab-results-content') {
+            loadContentLibrary();
+        } else if (targetId === 'tab-create') {
+            loadCustomTopics();
+        }
     }
 
     // Safe helper to avoid null errors on classList
@@ -744,6 +898,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (el && el.classList) el.classList.remove(cls);
     }
 
+    // Product navigation event listeners
+    productBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.product) {
+                showProduct(btn.dataset.product);
+            } else if (btn.dataset.target === 'tab-settings') {
+                showProduct('settings');
+            }
+        });
+    });
+    
+    // Tab navigation event listeners (within products)
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             showTab(btn.dataset.target);
@@ -836,11 +1002,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isPremium = structured?.isPremium !== undefined ? structured.isPremium : (response.isPremium || false);
             log(`Premium status (GPT detected): ${isPremium ? 'Yes (400 char limit)' : 'No (200 char limit)'}`);
 
+            // Extract and store content context from activity
+            const activity = response.activity || { posts: [], likes: [], comments: [] };
+            const contentContext = {
+                posts: activity.posts.slice(0, 10).map(post => ({
+                    text: post.text?.substring(0, 500) || '',
+                    url: post.url || ''
+                })),
+                topics: [], // Will be populated if we analyze
+                timestamp: new Date().toISOString()
+            };
+            
             await chrome.storage.local.set({
                 sender_profile_cache: data.substring(0, 20000),
                 sender_profile_structured: structured,
                 sender_profile_date: now,
-                sender_is_premium: isPremium
+                sender_is_premium: isPremium,
+                sender_content_context: contentContext
             });
 
             log("Data saved to chrome.storage.local");
@@ -1838,7 +2016,7 @@ Rules:
             e.preventDefault();
             e.stopPropagation();
             
-            const email = 'issues@gmail.com';
+            const email = 'manish.neo@gmail.com';
             const success = await copyToClipboard(email);
             
             if (success) {
@@ -2905,4 +3083,1576 @@ Also generate complete sequences:
             analyzeBtn.textContent = originalText;
         }
     });
-})
+
+    // === AI Content Copilot ===
+    
+    // Analyze profile content for inspiration
+    async function analyzeProfileContentForInspiration() {
+        if (!analyzeProfileContentBtn) return;
+        
+        // Disable button
+        analyzeProfileContentBtn.disabled = true;
+        analyzeProfileContentBtn.style.opacity = '0.6';
+        analyzeProfileContentBtn.style.cursor = 'not-allowed';
+        const originalText = analyzeProfileContentBtn.textContent;
+        analyzeProfileContentBtn.textContent = 'Analyzing...';
+        
+        if (contentAnalysisStatusBadge) {
+            contentAnalysisStatusBadge.textContent = 'Analyzing...';
+        }
+        
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab || !tab.url.includes('linkedin.com/in/')) {
+                alert('Please navigate to a LinkedIn profile page first');
+                return;
+            }
+            
+            // Extract user handle from profile URL to construct recent activity URL
+            const profileUrl = tab.url;
+            const urlMatch = profileUrl.match(/linkedin\.com\/in\/([^\/]+)/);
+            if (!urlMatch) {
+                throw new Error("Could not extract user handle from profile URL");
+            }
+            
+            const userHandle = urlMatch[1];
+            const recentActivityUrl = `https://www.linkedin.com/in/${userHandle}/recent-activity/all/`;
+            log(`[ContentAnalysis] Constructed activity URL: ${recentActivityUrl}`);
+            
+            // Get profile info first
+            if (!(await ensureContentScript(tab.id))) {
+                throw new Error("Connection failed. Please refresh the page.");
+            }
+            
+            const profileResponse = await chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_PROFILE' });
+            if (!profileResponse?.success) {
+                throw new Error("Failed to scrape profile");
+            }
+            
+            // Extract profile name from response or fallback
+            let profileName = profileResponse.profileName || 'Unknown Profile';
+            
+            // Fallback: try to extract from profile text if not provided
+            if (!profileName || profileName === 'Unknown Profile') {
+                try {
+                    const profileText = profileResponse.data || '';
+                    const lines = profileText.split('\n').filter(line => line.trim().length > 0);
+                    if (lines.length > 0) {
+                        profileName = lines[0].trim()
+                            .replace(/\s*View profile.*$/i, '')
+                            .replace(/\s*LinkedIn.*$/i, '')
+                            .trim()
+                            .substring(0, 100);
+                    }
+                    
+                    // Final fallback: extract from URL
+                    if (!profileName || profileName.length < 3) {
+                        const urlMatch = tab.url.match(/linkedin\.com\/in\/([^\/\?]+)/);
+                        if (urlMatch) {
+                            profileName = urlMatch[1]
+                                .split('-')
+                                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                .join(' ');
+                        }
+                    }
+                } catch (e) {
+                    log(`[ContentAnalysis] Could not extract profile name: ${e.message}`);
+                }
+            }
+            
+            log(`[ContentAnalysis] Profile name: ${profileName}`);
+            
+            // Open recent activity page in a new tab
+            if (contentAnalysisStatusBadge) {
+                contentAnalysisStatusBadge.textContent = 'Loading posts...';
+            }
+            const activityTab = await chrome.tabs.create({ 
+                url: recentActivityUrl,
+                active: false
+            });
+            
+            log(`[ContentAnalysis] Opened activity tab: ${activityTab.id}`);
+            
+            // Wait for page to load
+            await new Promise(resolve => setTimeout(resolve, 4000));
+            
+            // Wait for tab to be ready
+            let tabReady = false;
+            for (let i = 0; i < 10; i++) {
+                try {
+                    const tabInfo = await chrome.tabs.get(activityTab.id);
+                    if (tabInfo.status === 'complete') {
+                        tabReady = true;
+                        break;
+                    }
+                } catch (e) {
+                    log(`[ContentAnalysis] Waiting for tab... ${i + 1}/10`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            if (!tabReady) {
+                log("[ContentAnalysis] ⚠ Tab not ready, proceeding anyway");
+            }
+            
+            // Inject content script into the new tab
+            try {
+                await chrome.scripting.executeScript({
+                    target: { tabId: activityTab.id },
+                    files: ['scripts/content.js']
+                });
+                log(`[ContentAnalysis] Injected content script`);
+            } catch (e) {
+                log(`[ContentAnalysis] ⚠ Could not inject script: ${e.message}`);
+            }
+            
+            // Load posts from recent activity page with engagement metrics
+            let activity = { posts: [], likes: [], comments: [] };
+            try {
+                const activityResponse = await chrome.tabs.sendMessage(activityTab.id, { action: 'LOAD_RECENT_ACTIVITY' });
+                if (activityResponse?.success && activityResponse.activity) {
+                    activity = activityResponse.activity;
+                    log(`[ContentAnalysis] ✓ Loaded ${activity.posts.length} posts with engagement metrics`);
+                } else {
+                    log("[ContentAnalysis] ⚠ Failed to load activity, trying fallback");
+                    // Fallback: try scraping from current tab
+                    const fallbackResponse = await chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_PROFILE' });
+                    if (fallbackResponse?.activity) {
+                        activity = fallbackResponse.activity;
+                    }
+                }
+            } catch (e) {
+                log(`[ContentAnalysis] ⚠ Error loading activity: ${e.message}`);
+                // Fallback: try scraping from current tab
+                const fallbackResponse = await chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_PROFILE' });
+                if (fallbackResponse?.activity) {
+                    activity = fallbackResponse.activity;
+                }
+            }
+            
+            // Close the activity tab
+            try {
+                await chrome.tabs.remove(activityTab.id);
+                log(`[ContentAnalysis] Closed activity tab`);
+            } catch (e) {
+                log(`[ContentAnalysis] ⚠ Could not close tab: ${e.message}`);
+            }
+            
+            if (activity.posts.length === 0) {
+                alert('No posts found on this profile. Try a profile with recent activity.');
+                return;
+            }
+            
+            // Get user context for better analysis
+            const stored = await chrome.storage.local.get([
+                'sender_profile_structured',
+                'user_goal',
+                'icp_definition',
+                'offer_details'
+            ]);
+            
+            const useBackend = useBackendCreditsCheckbox.checked;
+            const apiKey = useBackend ? null : apiKeyInput.value.trim();
+            
+            if (!useBackend && !apiKey) {
+                alert('Please configure your API key in Settings or enable Backend Credits');
+                return;
+            }
+            
+            // Filter and prepare posts with engagement metrics for analysis
+            const postsWithEngagement = activity.posts
+                .map((post, i) => {
+                    const engagement = post.engagement || { likes: 0, comments: 0, shares: 0 };
+                    const postText = (post.text || post.fullText || '').trim();
+                    
+                    return {
+                        index: i + 1,
+                        text: postText,
+                        engagement: engagement,
+                        url: post.url || '',
+                        timestamp: post.timestamp || ''
+                    };
+                })
+                .filter(post => {
+                    // Skip very short posts (2-3 lines or less than 100 characters)
+                    const lineCount = (post.text.match(/\n/g) || []).length + 1;
+                    if (lineCount <= 3 || post.text.length < 100) {
+                        log(`[ContentAnalysis] Skipping short post: ${lineCount} lines, ${post.text.length} chars`);
+                        return false;
+                    }
+                    
+                    // Skip hiring/job posts
+                    const hiringKeywords = [
+                        'hiring', 'we are hiring', 'looking for', 'job opening', 'open position',
+                        'join our team', 'career opportunity', 'apply now', 'recruiting',
+                        'job posting', 'open role', 'now hiring', 'position available'
+                    ];
+                    const lowerText = post.text.toLowerCase();
+                    if (hiringKeywords.some(keyword => lowerText.includes(keyword))) {
+                        log(`[ContentAnalysis] Skipping hiring post`);
+                        return false;
+                    }
+                    
+                    return true;
+                });
+            
+            if (postsWithEngagement.length === 0) {
+                alert('No valuable posts found after filtering. The profile may only have short posts or hiring announcements. Try a profile with more substantial content.');
+                return;
+            }
+            
+            log(`[ContentAnalysis] Filtered to ${postsWithEngagement.length} valuable posts (from ${activity.posts.length} total)`);
+            
+            // Sort by engagement (likes + comments) to prioritize high-performing posts
+            postsWithEngagement.sort((a, b) => {
+                const aTotal = (a.engagement.likes || 0) + (a.engagement.comments || 0);
+                const bTotal = (b.engagement.likes || 0) + (b.engagement.comments || 0);
+                return bTotal - aTotal;
+            });
+            
+            // Analyze posts to extract style, topics, patterns, and insights
+            const postsText = postsWithEngagement.slice(0, 20).map((post, i) => 
+                `Post ${post.index} (Likes: ${post.engagement.likes || 0}, Comments: ${post.engagement.comments || 0}, Shares: ${post.engagement.shares || 0}):
+${post.text.substring(0, 800)}`
+            ).join('\n\n---\n\n');
+            
+            const analysisPrompt = `Analyze these LinkedIn posts from a profile to extract comprehensive content insights including writing style, topics, patterns, and engagement factors.
+
+POSTS FROM PROFILE (sorted by engagement):
+${postsText}
+
+${stored.user_goal ? `USER'S GOAL: ${stored.user_goal}` : ''}
+${stored.icp_definition ? `ICP: ${stored.icp_definition}` : ''}
+
+Extract and return ONLY a JSON object with this structure:
+{
+  "topics": ["topic1", "topic2", "topic3", ...],
+  "contentThemes": ["theme1", "theme2", ...],
+  "writingStyle": {
+    "tone": "professional/conversational/educational/etc",
+    "structure": "how posts are structured",
+    "hookStyle": "how posts start/engage",
+    "length": "typical post length",
+    "formatting": "use of line breaks, emojis, lists, etc"
+  },
+  "contentPatterns": ["pattern1", "pattern2", ...],
+  "engagementInsights": {
+    "highPerformingTopics": ["topics that get most engagement"],
+    "effectiveHooks": ["hook styles that work"],
+    "engagementDrivers": ["what drives likes/comments"]
+  },
+  "examplePosts": [
+    {
+      "topic": "topic name",
+      "excerpt": "short excerpt from post",
+      "engagement": {"likes": 0, "comments": 0, "shares": 0},
+      "whyItWorks": "why this post is effective",
+      "keyElements": ["element1", "element2"]
+    }
+  ],
+  "suggestions": [
+    "suggestion1 for creating similar content",
+    "suggestion2",
+    ...
+  ]
+}
+
+Focus on:
+- Writing style and tone patterns
+- Content structure and formatting
+- Topics that get high engagement
+- Effective hooks and opening styles
+- What drives comments vs likes
+- Recurring themes and patterns
+- Adaptable insights for content creation`;
+
+            log("[ContentAnalysis] Analyzing profile content...");
+            
+            const requestBody = {
+                model: "gpt-4o-mini",
+                messages: [
+                    { role: "system", content: "You are a content strategy expert. Analyze LinkedIn posts to extract topics, themes, and content ideas. Return valid JSON only." },
+                    { role: "user", content: analysisPrompt }
+                ],
+                temperature: 0.5,
+                response_format: { type: "json_object" }
+            };
+            
+            const currentUserId = await getUserId();
+            const analysisResponse = await callGPTWithTracking(
+                'https://api.openai.com/v1/chat/completions',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                },
+                'gpt-5.2',
+                apiKey,
+                'content_analysis',
+                'Analyze profile content for inspiration',
+                null,
+                currentUserId
+            );
+            
+            if (!analysisResponse.ok) {
+                const err = await analysisResponse.json();
+                throw new Error(err.error?.message || 'Content analysis failed');
+            }
+            
+            const analysisData = await analysisResponse.json();
+            const analysisContent = analysisData.choices?.[0]?.message?.content || analysisData.response?.choices?.[0]?.message?.content;
+            const parsed = JSON.parse(analysisContent);
+            
+            // Store analyzed content references (enhanced)
+            analyzedContentReferences = {
+                topics: parsed.topics || [],
+                themes: parsed.contentThemes || [],
+                patterns: parsed.contentPatterns || [],
+                writingStyle: parsed.writingStyle || {},
+                engagementInsights: parsed.engagementInsights || {},
+                examples: parsed.examplePosts || [],
+                suggestions: parsed.suggestions || [],
+                profileUrl: tab.url,
+                profileName: profileName,
+                postsAnalyzed: activity.posts.length,
+                timestamp: new Date().toISOString(),
+                fullAnalysis: parsed // Store complete analysis
+            };
+            
+            // Save to database (always save, regardless of backend credits usage)
+            try {
+                const currentApiKey = await getApiKey();
+                if (!currentApiKey) {
+                    log("[ContentAnalysis] ⚠ No API key available, skipping database save");
+                } else {
+                    const analysisPayload = {
+                        profileUrl: tab.url,
+                        profileName: profileName,
+                        analysisType: 'content_inspiration',
+                        analysisData: {
+                            topics: parsed.topics || [],
+                            themes: parsed.contentThemes || [],
+                            writingStyle: parsed.writingStyle || {},
+                            patterns: parsed.contentPatterns || [],
+                            engagementInsights: parsed.engagementInsights || {},
+                            examplePosts: parsed.examplePosts || [],
+                            suggestions: parsed.suggestions || [],
+                            postsAnalyzed: postsWithEngagement.length,
+                            totalPostsFound: activity.posts.length,
+                            postsWithEngagement: postsWithEngagement.slice(0, 20)
+                        }
+                    };
+                    
+                    const saveResponse = await fetch(`${BACKEND_URL}/api/content-analyses`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': currentApiKey
+                        },
+                        body: JSON.stringify(analysisPayload)
+                    });
+                    
+                    if (saveResponse.ok) {
+                        const result = await saveResponse.json();
+                        analyzedContentReferences.analysisId = result.analysisId;
+                        log("[ContentAnalysis] ✓ Analysis saved to database with ID: " + result.analysisId);
+                        
+                        // Reload stored analyses if we're on the inspire tab
+                        if (document.getElementById('tab-inspire') && !document.getElementById('tab-inspire').classList.contains('hidden')) {
+                            loadStoredAnalyses();
+                        }
+                    } else {
+                        const errorData = await saveResponse.json().catch(() => ({}));
+                        log("[ContentAnalysis] ⚠ Failed to save to database: " + (errorData.error || saveResponse.statusText));
+                    }
+                }
+            } catch (saveError) {
+                log(`[ContentAnalysis] ⚠ Error saving to database: ${saveError.message}`);
+            }
+            
+            // Display results
+            if (analyzedTopicsList) {
+                let topicsHtml = '<div style="margin-bottom: 12px;"><strong>Topics Found:</strong></div><div style="display: flex; flex-wrap: wrap; gap: 6px;">';
+                (parsed.topics || []).forEach(topic => {
+                    topicsHtml += `<span class="topic-tag">${topic}</span>`;
+                });
+                topicsHtml += '</div>';
+                
+                // Add writing style info
+                if (parsed.writingStyle) {
+                    topicsHtml += '<div style="margin-top: 12px; padding: 8px; background: var(--input-bg); border-radius: 4px; font-size: 12px;">';
+                    topicsHtml += '<strong>Writing Style:</strong><br>';
+                    if (parsed.writingStyle.tone) topicsHtml += `Tone: ${parsed.writingStyle.tone}<br>`;
+                    if (parsed.writingStyle.structure) topicsHtml += `Structure: ${parsed.writingStyle.structure}<br>`;
+                    if (parsed.writingStyle.hookStyle) topicsHtml += `Hook Style: ${parsed.writingStyle.hookStyle}`;
+                    topicsHtml += '</div>';
+                }
+                
+                // Add engagement insights
+                if (parsed.engagementInsights) {
+                    topicsHtml += '<div style="margin-top: 12px; padding: 8px; background: var(--input-bg); border-radius: 4px; font-size: 12px;">';
+                    topicsHtml += '<strong>Engagement Insights:</strong><br>';
+                    if (parsed.engagementInsights.highPerformingTopics && parsed.engagementInsights.highPerformingTopics.length > 0) {
+                        topicsHtml += `High-performing topics: ${parsed.engagementInsights.highPerformingTopics.join(', ')}<br>`;
+                    }
+                    if (parsed.engagementInsights.effectiveHooks && parsed.engagementInsights.effectiveHooks.length > 0) {
+                        topicsHtml += `Effective hooks: ${parsed.engagementInsights.effectiveHooks.join(', ')}`;
+                    }
+                    topicsHtml += '</div>';
+                }
+                
+                analyzedTopicsList.innerHTML = topicsHtml;
+            }
+            
+            if (analyzedContentExamples) {
+                let examplesHtml = '<div style="margin-top: 12px;"><strong>Example Posts (with Engagement):</strong></div>';
+                (parsed.examplePosts || []).slice(0, 5).forEach((example, i) => {
+                    const engagement = example.engagement || {};
+                    const totalEngagement = (engagement.likes || 0) + (engagement.comments || 0) + (engagement.shares || 0);
+                    examplesHtml += `
+                        <div style="margin-top: 8px; padding: 8px; background: var(--input-bg); border-radius: 4px; font-size: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                                <div style="font-weight: 600;">${example.topic || 'Topic'}</div>
+                                <div style="font-size: 11px; color: var(--accent-color);">
+                                    👍 ${engagement.likes || 0} | 💬 ${engagement.comments || 0} | 🔄 ${engagement.shares || 0}
+                                </div>
+                            </div>
+                            <div style="color: var(--text-secondary); margin-bottom: 4px;">${example.excerpt || ''}</div>
+                            <div style="font-size: 11px; color: var(--accent-color); margin-bottom: 4px;">${example.whyItWorks || ''}</div>
+                            ${example.keyElements && example.keyElements.length > 0 ? `<div style="font-size: 10px; color: var(--text-secondary);">Key elements: ${example.keyElements.join(', ')}</div>` : ''}
+                        </div>
+                    `;
+                });
+                analyzedContentExamples.innerHTML = examplesHtml;
+            }
+            
+            // Show results
+            if (contentAnalysisResults) {
+                contentAnalysisResults.classList.remove('hidden');
+            }
+            
+            if (contentAnalysisStatusBadge) {
+                contentAnalysisStatusBadge.textContent = 'Complete!';
+            }
+            
+            log("[ContentAnalysis] ✓ Analysis complete");
+            
+        } catch (e) {
+            alert(e.message);
+            log(`[ContentAnalysis] Error: ${e.message}`);
+            if (contentAnalysisStatusBadge) {
+                contentAnalysisStatusBadge.textContent = 'Error';
+            }
+        } finally {
+            // Re-enable button
+            analyzeProfileContentBtn.disabled = false;
+            analyzeProfileContentBtn.style.opacity = '1';
+            analyzeProfileContentBtn.style.cursor = 'pointer';
+            analyzeProfileContentBtn.textContent = originalText;
+        }
+    }
+    
+    // Suggest topics based on profile and ICP
+    async function suggestContentTopics() {
+        if (!suggestTopicsBtn) return;
+        
+        // Disable button
+        suggestTopicsBtn.disabled = true;
+        suggestTopicsBtn.style.opacity = '0.6';
+        const originalText = suggestTopicsBtn.textContent;
+        suggestTopicsBtn.textContent = 'Suggesting...';
+        
+        try {
+            const stored = await chrome.storage.local.get([
+                'sender_profile_structured',
+                'user_goal',
+                'icp_definition',
+                'offer_details',
+                'content_library',
+                'sender_content_context'
+            ]);
+            
+            const useBackend = useBackendCreditsCheckbox.checked;
+            const apiKey = useBackend ? null : apiKeyInput.value.trim();
+            
+            if (!useBackend && !apiKey) {
+                alert('Please configure your API key in Settings or enable Backend Credits');
+                return;
+            }
+            
+            // Build context for topic suggestions with enhanced criteria
+            let contextText = '';
+            if (stored.user_goal) contextText += `Goal: ${stored.user_goal}\n`;
+            if (stored.icp_definition) contextText += `ICP: ${stored.icp_definition}\n`;
+            if (stored.offer_details) contextText += `Offer: ${stored.offer_details}\n`;
+            
+            // Enhanced profile context with company and industry
+            if (stored.sender_profile_structured) {
+                const profile = stored.sender_profile_structured;
+                contextText += `Profile: ${profile.name || ''} - ${profile.headline || ''}\n`;
+                
+                // Add current company if available
+                if (profile.currentCompany) {
+                    contextText += `Current Company: ${profile.currentCompany}\n`;
+                }
+                
+                // Add industry information
+                if (profile.industry) {
+                    contextText += `Industry: ${profile.industry}\n`;
+                }
+                
+                // Add experience and skills for personal interests
+                if (profile.experience && profile.experience.length > 0) {
+                    const recentExp = profile.experience.slice(0, 3).map(exp => 
+                        `${exp.title || ''} at ${exp.company || ''}`
+                    ).join(', ');
+                    if (recentExp) {
+                        contextText += `Recent Experience: ${recentExp}\n`;
+                    }
+                }
+                
+                if (profile.skills && profile.skills.length > 0) {
+                    const topSkills = profile.skills.slice(0, 10).join(', ');
+                    contextText += `Skills/Expertise: ${topSkills}\n`;
+                }
+            }
+            
+            // Include user's custom topic suggestions if available
+            const customTopics = await chrome.storage.local.get('custom_topic_suggestions');
+            if (customTopics.custom_topic_suggestions && customTopics.custom_topic_suggestions.length > 0) {
+                contextText += `\nUser's Custom Topic Ideas: ${customTopics.custom_topic_suggestions.join(', ')}\n`;
+            }
+            
+            // Include analyzed content references if available
+            if (analyzedContentReferences) {
+                contextText += `\nRecently analyzed profile topics: ${analyzedContentReferences.topics.join(', ')}\n`;
+            }
+            
+            // Include sender's own content context if available
+            if (stored.sender_content_context && stored.sender_content_context.posts && stored.sender_content_context.posts.length > 0) {
+                const ownPosts = stored.sender_content_context.posts
+                    .map(p => p.text)
+                    .filter(t => t)
+                    .slice(0, 5)
+                    .join('\n---\n');
+                contextText += `\nSender's own recent posts:\n${ownPosts}\n`;
+            }
+            
+            // Include previous content library topics
+            if (stored.content_library && stored.content_library.length > 0) {
+                const previousTopics = stored.content_library
+                    .map(item => item.topic)
+                    .filter(t => t)
+                    .slice(0, 10)
+                    .join(', ');
+                if (previousTopics) {
+                    contextText += `Previous content topics: ${previousTopics}\n`;
+                }
+            }
+            
+            const suggestionPrompt = `Suggest 10-15 LinkedIn content topics for a sales professional.
+
+CONTEXT:
+${contextText || 'No specific context provided'}
+
+TOPIC SUGGESTION CRITERIA (prioritize in this order):
+1. **Company-Related Topics** (if current company is provided):
+   - Industry trends affecting the company
+   - Company-specific challenges and solutions
+   - How the company's products/services solve problems
+   - Company culture and values
+   - Industry leadership and positioning
+
+2. **Industry-Related Topics** (if industry is provided):
+   - Industry trends and developments
+   - Common challenges in the industry
+   - Best practices and frameworks
+   - Industry-specific case studies
+   - Future of the industry
+
+3. **Personal Expertise Topics** (based on experience and skills):
+   - Areas where the sender has deep expertise
+   - Lessons learned from experience
+   - Personal insights and frameworks
+   - Success stories and case studies
+   - Common mistakes and how to avoid them
+
+4. **ICP-Focused Topics** (if ICP is defined):
+   - Problems the ICP faces
+   - Solutions relevant to the ICP
+   - Content that attracts the ICP
+   - Industry-specific insights for the ICP
+
+5. **Goal-Aligned Topics** (based on user's goals):
+   - Topics that support the user's business goals
+   - Content that positions for the offer/service
+   - Thought leadership in relevant areas
+
+6. **Engagement-Focused Topics**:
+   - Topics that generate discussion
+   - Controversial but valuable perspectives
+   - Timely and relevant content
+   - Personal stories that resonate
+
+${analyzedContentReferences ? '7. **Style-Inspired Topics**: Similar in style and approach to recently analyzed content, but adapted to the sender\'s context' : ''}
+
+${customTopics.custom_topic_suggestions && customTopics.custom_topic_suggestions.length > 0 ? '8. **User Custom Ideas**: Consider and expand upon the user\'s custom topic suggestions' : ''}
+
+Generate topics that:
+- Build credibility and expertise
+- Attract the ICP (if specified)
+- Align with the user's goals and offer
+- Are engaging and shareable
+- Position the sender as a thought leader
+- Address buyer problems and challenges
+- Leverage company, industry, and personal expertise context
+
+Return ONLY a JSON object:
+{
+  "topics": [
+    {
+      "topic": "Topic title",
+      "description": "Why this topic works",
+      "angle": "Specific angle or approach"
+    }
+  ]
+}`;
+
+            log("[TopicSuggest] Generating topic suggestions...");
+            log("[TopicSuggest] Prompt: " + suggestionPrompt);
+            
+            const requestBody = {
+                model: "gpt-5.2",
+                messages: [
+                    { role: "system", content: "You are a LinkedIn content strategist. Suggest engaging, relevant content topics. Return valid JSON only." },
+                    { role: "user", content: suggestionPrompt }
+                ],
+                temperature: 0.7,
+                response_format: { type: "json_object" }
+            };
+            
+            const currentUserId = await getUserId();
+            const response = await callGPTWithTracking(
+                'https://api.openai.com/v1/chat/completions',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                },
+                'gpt-5.2',
+                apiKey,
+                'topic_suggestion',
+                'Suggest content topics',
+                null,
+                currentUserId
+            );
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error?.message || 'Topic suggestion failed');
+            }
+            
+            const data = await response.json();
+            const content = data.choices?.[0]?.message?.content || data.response?.choices?.[0]?.message?.content;
+            const parsed = JSON.parse(content);
+            
+            // Display suggested topics
+            if (suggestedTopicsContainer) {
+                const topics = parsed.topics || [];
+                let html = `
+                    <div class="suggested-topics-header">
+                        <h4>💡 Suggested Topics (${topics.length})</h4>
+                        <p class="suggested-topics-subtitle">Click "Use" to select a topic, or click anywhere on the card to use it</p>
+                    </div>
+                    <div class="suggested-topics-grid">
+                `;
+                
+                topics.forEach((topicObj, index) => {
+                    const topic = typeof topicObj === 'string' ? topicObj : topicObj.topic;
+                    const description = typeof topicObj === 'object' ? topicObj.description : null;
+                    const angle = typeof topicObj === 'object' ? topicObj.angle : null;
+                    
+                    html += `
+                        <div class="suggested-topic-card" data-topic="${topic}" data-index="${index}">
+                            <div class="suggested-topic-number">${index + 1}</div>
+                            <div class="suggested-topic-content">
+                                <h5 class="suggested-topic-title">${topic}</h5>
+                                ${description ? `<p class="suggested-topic-description">${description}</p>` : ''}
+                                ${angle ? `<div class="suggested-topic-angle">📌 ${angle}</div>` : ''}
+                            </div>
+                            <button class="use-topic-btn" data-topic="${topic}" title="Use this topic">
+                                <span>Use</span>
+                                <span class="use-icon">→</span>
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                suggestedTopicsContainer.innerHTML = html;
+                suggestedTopicsContainer.classList.remove('hidden');
+                
+                // Add event listeners for Use buttons
+                suggestedTopicsContainer.querySelectorAll('.use-topic-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const topic = e.target.closest('.use-topic-btn').dataset.topic;
+                        if (contentTopicInput) {
+                            contentTopicInput.value = topic;
+                            // Scroll to input field
+                            contentTopicInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // Highlight the input field
+                            contentTopicInput.classList.add('topic-selected');
+                            setTimeout(() => {
+                                contentTopicInput.classList.remove('topic-selected');
+                            }, 2000);
+                            // Visual feedback on button
+                            btn.classList.add('used');
+                            setTimeout(() => {
+                                btn.classList.remove('used');
+                            }, 1000);
+                        }
+                    });
+                });
+                
+                // Make entire card clickable
+                suggestedTopicsContainer.querySelectorAll('.suggested-topic-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        // Don't trigger if clicking the Use button
+                        if (e.target.closest('.use-topic-btn')) return;
+                        
+                        const topic = card.dataset.topic;
+                        if (contentTopicInput) {
+                            contentTopicInput.value = topic;
+                            // Scroll to input field
+                            contentTopicInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // Highlight the input field
+                            contentTopicInput.classList.add('topic-selected');
+                            setTimeout(() => {
+                                contentTopicInput.classList.remove('topic-selected');
+                            }, 2000);
+                            // Visual feedback on card
+                            card.classList.add('selected');
+                            setTimeout(() => {
+                                card.classList.remove('selected');
+                            }, 1000);
+                        }
+                    });
+                });
+            }
+            
+            log("[TopicSuggest] ✓ Topics suggested");
+            
+        } catch (e) {
+            alert(e.message);
+            log(`[TopicSuggest] Error: ${e.message}`);
+        } finally {
+            // Re-enable button
+            suggestTopicsBtn.disabled = false;
+            suggestTopicsBtn.style.opacity = '1';
+            suggestTopicsBtn.textContent = originalText;
+        }
+    }
+    
+    async function generateLinkedInContent() {
+        if (!generateContentBtn) return;
+        
+        // Disable button
+        generateContentBtn.disabled = true;
+        generateContentBtn.style.opacity = '0.6';
+        generateContentBtn.style.cursor = 'not-allowed';
+        const originalText = generateContentBtn.textContent;
+        generateContentBtn.textContent = 'Generating...';
+        
+        if (contentStatusBadge) {
+            contentStatusBadge.textContent = 'Generating...';
+        }
+        
+        try {
+            // Get user context
+            const stored = await chrome.storage.local.get([
+                'sender_profile_structured',
+                'user_goal',
+                'icp_definition',
+                'offer_details',
+                'proof_points'
+            ]);
+            
+            const senderStructured = stored.sender_profile_structured;
+            const userGoal = stored.user_goal || '';
+            const icpDefinition = stored.icp_definition || '';
+            const offerDetails = stored.offer_details || '';
+            const proofPoints = stored.proof_points || '';
+            
+            // Get content parameters
+            const contentType = contentTypeSelect?.value || 'post';
+            const contentTopic = contentTopicInput?.value.trim() || '';
+            const contentTone = contentToneSelect?.value || 'conversational';
+            const contentCTA = contentCTAInput?.value.trim() || '';
+            const includePersonalStory = includePersonalStorySelect?.value || 'auto';
+            
+            // Check if using backend credits
+            const useBackend = useBackendCreditsCheckbox.checked;
+            const apiKey = useBackend ? null : apiKeyInput.value.trim();
+            
+            if (!useBackend && !apiKey) {
+                alert('Please configure your API key in Settings or enable Backend Credits');
+                return;
+            }
+            
+            // Build prompt for content generation
+            const prompt = `You are an expert LinkedIn content creator helping a sales professional build their personal brand and improve outreach performance.
+
+CONTEXT:
+- User's Goal: ${userGoal || 'Not specified'}
+- ICP Definition: ${icpDefinition || 'Not specified'}
+- Offer/Service: ${offerDetails || 'Not specified'}
+- Proof Points: ${proofPoints || 'Not specified'}
+
+${senderStructured ? `SENDER PROFILE:
+${JSON.stringify(senderStructured, null, 2)}
+Use this profile to:
+- Reference relevant experience and expertise
+- Build credibility through background
+- Create authentic personal stories when appropriate
+- Align content with sender's professional positioning
+` : 'Sender profile not captured yet. Create general but valuable content.'}
+
+CONTENT REQUIREMENTS:
+- Content Type: ${contentType}
+- Topic/Focus: ${contentTopic || 'AI should suggest based on sender profile, ICP, and goals'}
+- Tone: ${contentTone}
+- Include Personal Story: ${includePersonalStory}
+- Call-to-Action: ${contentCTA || 'AI should suggest appropriate CTA'}
+
+${analyzedContentReferences ? `CONTENT INSPIRATION FROM ANALYZED PROFILE:
+Topics: ${analyzedContentReferences.topics.join(', ')}
+Themes: ${analyzedContentReferences.themes.join(', ')}
+Patterns: ${analyzedContentReferences.patterns.join(', ')}
+Example Posts:
+${analyzedContentReferences.examples.map((ex, i) => `${i + 1}. ${ex.topic}: ${ex.excerpt}`).join('\n')}
+Suggestions: ${analyzedContentReferences.suggestions.join(', ')}
+
+Use these as inspiration but create original content. Adapt the successful patterns and topics to fit the sender's context.` : ''}
+
+CONTENT GUIDELINES:
+1. Create content that positions the sender as an expert in their field
+2. Address problems and challenges relevant to the ICP
+3. Provide value (insights, tips, frameworks, case studies)
+4. Make it engaging and shareable
+5. Include clear positioning ("what do you do" in 5 seconds)
+6. Signal expertise through specific examples or data
+7. Align with buyer problems from ICP definition
+8. Use appropriate tone (${contentTone})
+9. ${includePersonalStory === 'yes' ? 'Include relevant personal experience or story' : includePersonalStory === 'no' ? 'Keep it general, avoid personal stories' : 'AI decides if personal story adds value'}
+10. ${contentCTA ? `Include this CTA: ${contentCTA}` : 'Include appropriate call-to-action'}
+
+CONTENT TYPE SPECIFICS:
+${contentType === 'post' ? '- LinkedIn Post: 1300-3000 characters, engaging hook, valuable insights, clear CTA' : ''}
+${contentType === 'article' ? '- LinkedIn Article: 2000-5000 words, comprehensive, in-depth, structured with headings' : ''}
+${contentType === 'carousel' ? '- Carousel Post: 5-10 slides with concise text per slide, visual-friendly format' : ''}
+${contentType === 'video-script' ? '- Video Script: 2-5 minutes speaking time, engaging opening, clear structure, strong close' : ''}
+${contentType === 'poll' ? '- Poll with Context: Engaging poll question with supporting context post explaining why it matters' : ''}
+
+Return ONLY a JSON object with this structure:
+{
+  "content": "The full generated content text",
+  "title": "Suggested title/headline (if applicable)",
+  "strategy": "Why this content works for the sender's goals and ICP",
+  "tips": ["Tip 1 for posting", "Tip 2 for engagement", "Tip 3 for optimization"],
+  "hashtags": ["#relevant", "#hashtags", "#suggested"],
+  "postingTime": "Best time to post (if applicable)"
+}`;
+
+            log("[ContentGen] Generating content...");
+            log(`[ContentGen] Type: ${contentType}, Tone: ${contentTone}, Topic: ${contentTopic || 'AI-suggested'}`);
+            
+            const requestBody = {
+                model: "gpt-4o-mini",
+                messages: [
+                    { role: "system", content: "You are an expert LinkedIn content creator. Generate high-quality, engaging LinkedIn content that builds personal brand and improves outreach performance. Return valid JSON only." },
+                    { role: "user", content: prompt }
+                ],
+                temperature: 0.7,
+                response_format: { type: "json_object" }
+            };
+            
+            const currentUserId = await getUserId();
+            const response = await callGPTWithTracking(
+                'https://api.openai.com/v1/chat/completions',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                },
+                'gpt-4o-mini',
+                apiKey,
+                'content_generation',
+                `Generate ${contentType} content for LinkedIn`,
+                null,
+                currentUserId
+            );
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error?.message || 'Content generation failed');
+            }
+            
+            const data = await response.json();
+            const content = data.choices?.[0]?.message?.content || data.response?.choices?.[0]?.message?.content;
+            const parsed = JSON.parse(content);
+            
+            // Display generated content
+            if (generatedContentText) {
+                generatedContentText.textContent = parsed.content || parsed;
+            }
+            
+            // Update metadata
+            const textContent = parsed.content || parsed;
+            const charCount = textContent.length;
+            const wordCount = textContent.split(/\s+/).filter(w => w.length > 0).length;
+            const readTime = Math.ceil(wordCount / 200); // Average reading speed: 200 words/min
+            
+            if (contentCharCount) contentCharCount.textContent = charCount.toLocaleString();
+            if (contentWordCount) contentWordCount.textContent = wordCount.toLocaleString();
+            if (contentReadTime) contentReadTime.textContent = `${readTime} min`;
+            
+            // Display strategy and tips
+            if (contentStrategyTips) {
+                let tipsHtml = '';
+                if (parsed.strategy) {
+                    tipsHtml += `<p><strong>Strategy:</strong> ${parsed.strategy}</p>`;
+                }
+                if (parsed.tips && Array.isArray(parsed.tips)) {
+                    tipsHtml += '<ul>';
+                    parsed.tips.forEach(tip => {
+                        tipsHtml += `<li>${tip}</li>`;
+                    });
+                    tipsHtml += '</ul>';
+                }
+                if (parsed.hashtags && Array.isArray(parsed.hashtags)) {
+                    tipsHtml += `<p><strong>Suggested Hashtags:</strong> ${parsed.hashtags.join(' ')}</p>`;
+                }
+                if (parsed.postingTime) {
+                    tipsHtml += `<p><strong>Best Posting Time:</strong> ${parsed.postingTime}</p>`;
+                }
+                contentStrategyTips.innerHTML = tipsHtml || '<p>No additional tips available.</p>';
+            }
+            
+            // Show content section
+            if (generatedContentSection) {
+                generatedContentSection.classList.remove('hidden');
+            }
+            
+            // Save to library
+            await saveContentToLibrary({
+                type: contentType,
+                topic: contentTopic,
+                tone: contentTone,
+                content: textContent,
+                title: parsed.title || '',
+                strategy: parsed.strategy || '',
+                tips: parsed.tips || [],
+                hashtags: parsed.hashtags || [],
+                timestamp: new Date().toISOString()
+            });
+            
+            // Load library
+            await loadContentLibrary();
+            
+            if (contentStatusBadge) {
+                contentStatusBadge.textContent = 'Complete!';
+            }
+            
+            log("[ContentGen] ✓ Content generated successfully");
+            
+        } catch (e) {
+            alert(e.message);
+            log(`[ContentGen] Error: ${e.message}`);
+            if (contentStatusBadge) {
+                contentStatusBadge.textContent = 'Error';
+            }
+        } finally {
+            // Re-enable button
+            generateContentBtn.disabled = false;
+            generateContentBtn.style.opacity = '1';
+            generateContentBtn.style.cursor = 'pointer';
+            generateContentBtn.textContent = originalText;
+        }
+    }
+    
+    // Save content to library (both local storage and database)
+    async function saveContentToLibrary(contentData) {
+        try {
+            // Save to local storage
+            const stored = await chrome.storage.local.get('content_library');
+            const library = stored.content_library || [];
+            library.unshift(contentData); // Add to beginning
+            // Keep only last 50 items
+            const limitedLibrary = library.slice(0, 50);
+            await chrome.storage.local.set({ content_library: limitedLibrary });
+            log("[ContentLib] Content saved to local library");
+            
+            // Save to database
+            try {
+                const currentApiKey = await getApiKey();
+                if (currentApiKey) {
+                    const contentPayload = {
+                        contentType: contentData.type,
+                        topic: contentData.topic || '',
+                        tone: contentData.tone || '',
+                        content: contentData.content,
+                        title: contentData.title || '',
+                        strategy: contentData.strategy || '',
+                        tips: contentData.tips || [],
+                        hashtags: contentData.hashtags || [],
+                        metadata: {
+                            charCount: contentData.content.length,
+                            wordCount: contentData.content.split(/\s+/).filter(w => w.length > 0).length,
+                            readTime: Math.ceil(contentData.content.split(/\s+/).filter(w => w.length > 0).length / 200)
+                        }
+                    };
+                    
+                    const saveResponse = await fetch(`${BACKEND_URL}/api/generated-content`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': currentApiKey
+                        },
+                        body: JSON.stringify(contentPayload)
+                    });
+                    
+                    if (saveResponse.ok) {
+                        const result = await saveResponse.json();
+                        log("[ContentLib] ✓ Content saved to database with ID: " + result.contentId);
+                    } else {
+                        const errorData = await saveResponse.json().catch(() => ({}));
+                        log("[ContentLib] ⚠ Failed to save to database: " + (errorData.error || saveResponse.statusText));
+                    }
+                } else {
+                    log("[ContentLib] ⚠ No API key available, skipping database save");
+                }
+            } catch (dbError) {
+                log(`[ContentLib] ⚠ Error saving to database: ${dbError.message}`);
+            }
+        } catch (error) {
+            log(`[ContentLib] Error saving: ${error.message}`);
+        }
+    }
+    
+    // Load content library
+    async function loadContentLibrary() {
+        try {
+            const stored = await chrome.storage.local.get('content_library');
+            const library = stored.content_library || [];
+            
+            if (!contentLibrary) return;
+            
+            if (library.length === 0) {
+                contentLibrary.innerHTML = '<p class="empty-state">No saved content yet. Generate content to build your library.</p>';
+                return;
+            }
+            
+            let html = '';
+            library.forEach((item, index) => {
+                const date = new Date(item.timestamp);
+                const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const preview = item.content.substring(0, 150) + (item.content.length > 150 ? '...' : '');
+                
+                html += `
+                    <div class="content-library-item" data-index="${index}">
+                        <div class="content-library-item-header">
+                            <div class="content-library-item-title">${item.type.charAt(0).toUpperCase() + item.type.slice(1)} - ${item.topic || 'General'}</div>
+                            <div class="content-library-item-date">${dateStr}</div>
+                        </div>
+                        <div class="content-library-item-preview">${preview}</div>
+                        <div class="content-library-item-actions">
+                            <button class="secondary-btn view-content-btn" data-index="${index}">View</button>
+                            <button class="secondary-btn copy-library-content-btn" data-index="${index}">Copy</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            contentLibrary.innerHTML = html;
+            
+            // Add event listeners
+            contentLibrary.querySelectorAll('.view-content-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    viewContentFromLibrary(library[index]);
+                });
+            });
+            
+            contentLibrary.querySelectorAll('.copy-library-content-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    const success = await copyToClipboard(library[index].content);
+                    if (success) {
+                        e.target.textContent = '✓ Copied!';
+                        setTimeout(() => {
+                            e.target.textContent = 'Copy';
+                        }, 2000);
+                    }
+                });
+            });
+            
+        } catch (error) {
+            log(`[ContentLib] Error loading: ${error.message}`);
+        }
+    }
+    
+    // View content from library
+    function viewContentFromLibrary(item) {
+        if (generatedContentText) {
+            generatedContentText.textContent = item.content;
+        }
+        
+        const charCount = item.content.length;
+        const wordCount = item.content.split(/\s+/).filter(w => w.length > 0).length;
+        const readTime = Math.ceil(wordCount / 200);
+        
+        if (contentCharCount) contentCharCount.textContent = charCount.toLocaleString();
+        if (contentWordCount) contentWordCount.textContent = wordCount.toLocaleString();
+        if (contentReadTime) contentReadTime.textContent = `${readTime} min`;
+        
+        if (contentStrategyTips) {
+            let tipsHtml = '';
+            if (item.strategy) {
+                tipsHtml += `<p><strong>Strategy:</strong> ${item.strategy}</p>`;
+            }
+            if (item.tips && Array.isArray(item.tips)) {
+                tipsHtml += '<ul>';
+                item.tips.forEach(tip => {
+                    tipsHtml += `<li>${tip}</li>`;
+                });
+                tipsHtml += '</ul>';
+            }
+            if (item.hashtags && Array.isArray(item.hashtags)) {
+                tipsHtml += `<p><strong>Suggested Hashtags:</strong> ${item.hashtags.join(' ')}</p>`;
+            }
+            contentStrategyTips.innerHTML = tipsHtml || '<p>No additional tips available.</p>';
+        }
+        
+        if (generatedContentSection) {
+            generatedContentSection.classList.remove('hidden');
+        }
+        
+        // Scroll to content
+        generatedContentSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    // Load stored content analyses
+    async function loadStoredAnalyses() {
+        const storedAnalysesList = document.getElementById('storedAnalysesList');
+        if (!storedAnalysesList) return;
+        
+        try {
+            const currentApiKey = await getApiKey();
+            if (!currentApiKey) {
+                storedAnalysesList.innerHTML = '<p class="empty-state">API key required to load stored analyses.</p>';
+                return;
+            }
+            
+            const response = await fetch(`${BACKEND_URL}/api/content-analyses`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': currentApiKey
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to load stored analyses');
+            }
+            
+            const result = await response.json();
+            const analyses = result.analyses || [];
+            
+            if (analyses.length === 0) {
+                storedAnalysesList.innerHTML = '<p class="empty-state">No stored analyses yet. Analyze a profile to store insights.</p>';
+                return;
+            }
+            
+            // Sort by date (newest first)
+            analyses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            let html = '';
+            analyses.forEach((analysis) => {
+                const date = new Date(analysis.created_at);
+                const dateStr = date.toLocaleDateString();
+                const analysisData = analysis.analysis_data || {};
+                const topics = analysisData.topics || [];
+                const writingStyle = analysisData.writingStyle || {};
+                const postsAnalyzed = analysisData.postsAnalyzed || 0;
+                
+                // Format topics as tags (max 3 visible)
+                const topicsDisplay = topics.slice(0, 3).map(topic => 
+                    `<span class="topic-tag-small">${topic}</span>`
+                ).join('');
+                const moreTopics = topics.length > 3 ? ` +${topics.length - 3} more` : '';
+                
+                // Format style
+                const styleDisplay = writingStyle.tone || 'N/A';
+                
+                html += `
+                    <div class="stored-analysis-item" data-analysis-id="${analysis.analysis_id}">
+                        <div class="stored-analysis-header">
+                            <div class="stored-analysis-info">
+                                <div class="stored-analysis-name">${analysis.profile_name || 'Unknown Profile'}</div>
+                                <div class="stored-analysis-meta">
+                                    ${postsAnalyzed} posts • ${dateStr}
+                                </div>
+                            </div>
+                            <button class="delete-analysis-btn" data-analysis-id="${analysis.analysis_id}" title="Delete">×</button>
+                        </div>
+                        <div class="stored-analysis-details">
+                            <div class="stored-analysis-topics">
+                                <span class="stored-analysis-label">Topics:</span>
+                                ${topicsDisplay}
+                                ${moreTopics ? `<span class="topics-more">${moreTopics}</span>` : ''}
+                            </div>
+                            <div class="stored-analysis-style">
+                                <span class="stored-analysis-label">Style:</span>
+                                <span class="style-value">${styleDisplay}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            storedAnalysesList.innerHTML = html;
+            
+            // Add event listeners for delete buttons
+            storedAnalysesList.querySelectorAll('.delete-analysis-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const analysisId = e.target.dataset.analysisId;
+                    if (confirm('Are you sure you want to delete this analysis?')) {
+                        await deleteContentAnalysis(analysisId);
+                    }
+                });
+            });
+            
+            // Make items clickable to load analysis
+            storedAnalysesList.querySelectorAll('.stored-analysis-item').forEach(item => {
+                item.style.cursor = 'pointer';
+                item.addEventListener('click', async (e) => {
+                    // Don't trigger if clicking delete button
+                    if (e.target.classList.contains('delete-analysis-btn')) {
+                        return;
+                    }
+                    
+                    const analysisId = item.dataset.analysisId;
+                    const analysis = analyses.find(a => a.analysis_id === analysisId);
+                    if (analysis) {
+                        // Load this analysis as the current reference
+                        analyzedContentReferences = {
+                            topics: analysis.analysis_data.topics || [],
+                            themes: analysis.analysis_data.themes || [],
+                            patterns: analysis.analysis_data.patterns || [],
+                            writingStyle: analysis.analysis_data.writingStyle || {},
+                            engagementInsights: analysis.analysis_data.engagementInsights || {},
+                            examples: analysis.analysis_data.examplePosts || [],
+                            suggestions: analysis.analysis_data.suggestions || [],
+                            profileUrl: analysis.profile_url,
+                            profileName: analysis.profile_name,
+                            postsAnalyzed: analysis.analysis_data.postsAnalyzed || 0,
+                            timestamp: analysis.created_at,
+                            analysisId: analysis.analysis_id,
+                            fullAnalysis: analysis.analysis_data
+                        };
+                        
+                        // Display the analysis
+                        if (analyzedTopicsList) {
+                            let topicsHtml = '<div style="margin-bottom: 12px;"><strong>Topics Found:</strong></div><div style="display: flex; flex-wrap: wrap; gap: 6px;">';
+                            (analysis.analysis_data.topics || []).forEach(topic => {
+                                topicsHtml += `<span class="topic-tag">${topic}</span>`;
+                            });
+                            topicsHtml += '</div>';
+                            
+                            if (analysis.analysis_data.writingStyle) {
+                                topicsHtml += '<div style="margin-top: 12px; padding: 8px; background: var(--input-bg); border-radius: 4px; font-size: 12px;">';
+                                topicsHtml += '<strong>Writing Style:</strong><br>';
+                                if (analysis.analysis_data.writingStyle.tone) topicsHtml += `Tone: ${analysis.analysis_data.writingStyle.tone}<br>`;
+                                if (analysis.analysis_data.writingStyle.structure) topicsHtml += `Structure: ${analysis.analysis_data.writingStyle.structure}<br>`;
+                                if (analysis.analysis_data.writingStyle.hookStyle) topicsHtml += `Hook Style: ${analysis.analysis_data.writingStyle.hookStyle}`;
+                                topicsHtml += '</div>';
+                            }
+                            
+                            analyzedTopicsList.innerHTML = topicsHtml;
+                        }
+                        
+                        if (analyzedContentExamples) {
+                            let examplesHtml = '<div style="margin-top: 12px;"><strong>Example Posts (with Engagement):</strong></div>';
+                            (analysis.analysis_data.examplePosts || []).slice(0, 5).forEach((example) => {
+                                const engagement = example.engagement || {};
+                                examplesHtml += `
+                                    <div style="margin-top: 8px; padding: 8px; background: var(--input-bg); border-radius: 4px; font-size: 12px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                                            <div style="font-weight: 600;">${example.topic || 'Topic'}</div>
+                                            <div style="font-size: 11px; color: var(--accent-color);">
+                                                👍 ${engagement.likes || 0} | 💬 ${engagement.comments || 0} | 🔄 ${engagement.shares || 0}
+                                            </div>
+                                        </div>
+                                        <div style="color: var(--text-secondary); margin-bottom: 4px;">${example.excerpt || ''}</div>
+                                        <div style="font-size: 11px; color: var(--accent-color); margin-bottom: 4px;">${example.whyItWorks || ''}</div>
+                                        ${example.keyElements && example.keyElements.length > 0 ? `<div style="font-size: 10px; color: var(--text-secondary);">Key elements: ${example.keyElements.join(', ')}</div>` : ''}
+                                    </div>
+                                `;
+                            });
+                            analyzedContentExamples.innerHTML = examplesHtml;
+                        }
+                        
+                        if (contentAnalysisResults) {
+                            contentAnalysisResults.classList.remove('hidden');
+                        }
+                        
+                        // Switch to Create tab to use the analysis
+                        showTab('tab-create');
+                        alert('Analysis loaded! You can now use these insights for content generation.');
+                    }
+                });
+            });
+            
+        } catch (error) {
+            log(`[StoredAnalyses] Error loading: ${error.message}`);
+            storedAnalysesList.innerHTML = `<p class="empty-state" style="color: var(--error-color);">Error loading analyses: ${error.message}</p>`;
+        }
+    }
+    
+    // Delete content analysis
+    async function deleteContentAnalysis(analysisId) {
+        try {
+            const currentApiKey = await getApiKey();
+            if (!currentApiKey) {
+                alert('API key required to delete analysis');
+                return;
+            }
+            
+            const response = await fetch(`${BACKEND_URL}/api/content-analyses/${analysisId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': currentApiKey
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to delete analysis');
+            }
+            
+            log(`[StoredAnalyses] ✓ Deleted analysis: ${analysisId}`);
+            
+            // Reload the list
+            await loadStoredAnalyses();
+            
+        } catch (error) {
+            log(`[StoredAnalyses] Error deleting: ${error.message}`);
+            alert('Failed to delete analysis: ' + error.message);
+        }
+    }
+    
+    // Event listeners for content copilot
+    if (generateContentBtn) {
+        generateContentBtn.addEventListener('click', generateLinkedInContent);
+    }
+    
+    if (copyContentBtn) {
+        copyContentBtn.addEventListener('click', async () => {
+            const content = generatedContentText?.textContent || '';
+            if (content) {
+                const success = await copyToClipboard(content);
+                if (success) {
+                    copyContentBtn.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        copyContentBtn.textContent = '📋 Copy';
+                    }, 2000);
+                }
+            }
+        });
+    }
+    
+    if (regenerateContentBtn) {
+        regenerateContentBtn.addEventListener('click', generateLinkedInContent);
+    }
+    
+    // Event listeners for content analysis
+    if (analyzeProfileContentBtn) {
+        analyzeProfileContentBtn.addEventListener('click', analyzeProfileContentForInspiration);
+    }
+    
+    if (suggestTopicsBtn) {
+        suggestTopicsBtn.addEventListener('click', suggestContentTopics);
+    }
+    
+    // Custom topics management
+    async function loadCustomTopics() {
+        try {
+            const stored = await chrome.storage.local.get('custom_topic_suggestions');
+            const topics = stored.custom_topic_suggestions || [];
+            
+            if (customTopicsList) {
+                if (topics.length === 0) {
+                    customTopicsList.innerHTML = '<div class="custom-topics-empty">No custom topics yet. Click "Add" to create one.</div>';
+                } else {
+                    let html = '';
+                    topics.forEach((topic, index) => {
+                        html += `
+                            <div class="custom-topic-tag" data-topic="${topic}" data-index="${index}">
+                                <span class="custom-topic-text">${topic}</span>
+                                <button class="remove-custom-topic-btn" data-index="${index}" title="Remove">×</button>
+                            </div>
+                        `;
+                    });
+                    customTopicsList.innerHTML = html;
+                    
+                    // Add event listeners for remove buttons
+                    customTopicsList.querySelectorAll('.remove-custom-topic-btn').forEach(btn => {
+                        btn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            const index = parseInt(e.target.dataset.index);
+                            const stored = await chrome.storage.local.get('custom_topic_suggestions');
+                            const topics = stored.custom_topic_suggestions || [];
+                            topics.splice(index, 1);
+                            await chrome.storage.local.set({ custom_topic_suggestions: topics });
+                            await loadCustomTopics();
+                        });
+                    });
+                }
+            }
+        } catch (error) {
+            log(`[CustomTopics] Error loading: ${error.message}`);
+        }
+    }
+    
+    // Load custom topics on page load
+    if (customTopicsList) {
+        loadCustomTopics();
+    }
+    
+    if (addCustomTopicBtn) {
+        addCustomTopicBtn.addEventListener('click', () => {
+            const inputSection = document.getElementById('customTopicInputSection');
+            if (inputSection) {
+                inputSection.classList.remove('hidden');
+                const input = document.getElementById('newCustomTopicInput');
+                if (input) {
+                    input.focus();
+                }
+            }
+        });
+    }
+    
+    if (saveCustomTopicBtn && newCustomTopicInput) {
+        saveCustomTopicBtn.addEventListener('click', async () => {
+            const topic = newCustomTopicInput.value.trim();
+            if (!topic) {
+                alert('Please enter a topic');
+                return;
+            }
+            
+            try {
+                const stored = await chrome.storage.local.get('custom_topic_suggestions');
+                const topics = stored.custom_topic_suggestions || [];
+                if (topics.includes(topic)) {
+                    alert('This topic is already in your list');
+                    return;
+                }
+                topics.push(topic);
+                await chrome.storage.local.set({ custom_topic_suggestions: topics });
+                newCustomTopicInput.value = '';
+                const inputSection = document.getElementById('customTopicInputSection');
+                if (inputSection) {
+                    inputSection.classList.add('hidden');
+                }
+                await loadCustomTopics();
+                log("[CustomTopics] ✓ Topic added: " + topic);
+            } catch (error) {
+                log(`[CustomTopics] Error saving: ${error.message}`);
+                alert('Failed to save topic: ' + error.message);
+            }
+        });
+    }
+    
+    if (cancelCustomTopicBtn) {
+        cancelCustomTopicBtn.addEventListener('click', () => {
+            const inputSection = document.getElementById('customTopicInputSection');
+            if (inputSection) {
+                inputSection.classList.add('hidden');
+            }
+            if (newCustomTopicInput) {
+                newCustomTopicInput.value = '';
+            }
+        });
+    }
+    
+    // Allow Enter key to save custom topic
+    if (newCustomTopicInput) {
+        newCustomTopicInput.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter' && saveCustomTopicBtn) {
+                saveCustomTopicBtn.click();
+            } else if (e.key === 'Escape') {
+                if (cancelCustomTopicBtn) {
+                    cancelCustomTopicBtn.click();
+                }
+            }
+        });
+    }
+    
+    // Make custom topics clickable to use them
+    if (customTopicsList) {
+        // Use event delegation for dynamically added topics
+        customTopicsList.addEventListener('click', async (e) => {
+            const topicTag = e.target.closest('.custom-topic-tag');
+            if (topicTag && !e.target.classList.contains('remove-custom-topic-btn')) {
+                const topic = topicTag.dataset.topic;
+                if (contentTopicInput && topic) {
+                    contentTopicInput.value = topic;
+                    contentTopicInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    contentTopicInput.classList.add('topic-selected');
+                    setTimeout(() => {
+                        contentTopicInput.classList.remove('topic-selected');
+                    }, 2000);
+                }
+            }
+        });
+    }
+    
+    if (clearTopicBtn) {
+        clearTopicBtn.addEventListener('click', () => {
+            if (contentTopicInput) {
+                contentTopicInput.value = '';
+            }
+            if (suggestedTopicsContainer) {
+                suggestedTopicsContainer.classList.add('hidden');
+            }
+        });
+    }
+    
+    if (useAnalyzedTopicsBtn) {
+        useAnalyzedTopicsBtn.addEventListener('click', () => {
+            if (analyzedContentReferences && analyzedContentReferences.topics.length > 0) {
+                if (contentTopicInput) {
+                    // Use first topic or let user choose
+                    const topicsList = analyzedContentReferences.topics.slice(0, 5).join(', ');
+                    contentTopicInput.value = topicsList;
+                }
+            }
+        });
+    }
+    
+    // Initialize: Show marketing product by default
+    showProduct('marketing');
+    
+    // Load library on initialization if on results tab
+    if (document.getElementById('tab-results-content') && !document.getElementById('tab-results-content').classList.contains('hidden')) {
+        loadContentLibrary();
+    }
+});
