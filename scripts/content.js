@@ -103,6 +103,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true; // Keep channel open for async response
     }
 
+    if (request.action === 'SCRAPE_JOB') {
+        console.log('[ContentScript] 💼 Starting job extraction...');
+        
+        (async () => {
+            try {
+                const jobData = extractJobDetails();
+                sendResponse({ success: true, data: jobData });
+            } catch (e) {
+                console.error('[ContentScript] ✗ Error extracting job:', e);
+                sendResponse({ success: false, error: e.message });
+            }
+        })();
+        
+        return true; // Keep channel open for async response
+    }
+
     return true; // Keep channel open for async response
 });
 
@@ -614,6 +630,171 @@ async function loadRecentActivityPage() {
 
     console.log(`[RecentActivity] ✓ Extracted ${activity.posts.length} posts from recent activity page`);
     return activity;
+}
+
+/**
+ * Extract job details from LinkedIn job posting page
+ */
+function extractJobDetails() {
+    console.log('[JobExtraction] Starting job extraction...');
+    
+    const jobData = {
+        title: '',
+        company: '',
+        location: '',
+        description: '',
+        requirements: '',
+        responsibilities: '',
+        jobUrl: window.location.href,
+        postedDate: '',
+        applicants: '',
+        employmentType: '',
+        seniorityLevel: '',
+        jobFunction: '',
+        industries: []
+    };
+    
+    try {
+        // Extract job title
+        const titleSelectors = [
+            'h1.job-details-jobs-unified-top-card__job-title',
+            'h1[data-test-id="job-title"]',
+            '.jobs-details-top-card__job-title h1',
+            'h1.jobs-details__job-title',
+            'h1'
+        ];
+        
+        for (const selector of titleSelectors) {
+            const titleElement = document.querySelector(selector);
+            if (titleElement && titleElement.innerText?.trim()) {
+                jobData.title = titleElement.innerText.trim();
+                console.log('[JobExtraction] ✓ Title:', jobData.title);
+                break;
+            }
+        }
+        
+        // Extract company name
+        const companySelectors = [
+            '.job-details-jobs-unified-top-card__company-name a',
+            'a[data-test-id="job-poster"]',
+            '.jobs-details-top-card__company-name a',
+            '.jobs-details__company-name a',
+            'a[href*="/company/"]'
+        ];
+        
+        for (const selector of companySelectors) {
+            const companyElement = document.querySelector(selector);
+            if (companyElement && companyElement.innerText?.trim()) {
+                jobData.company = companyElement.innerText.trim();
+                console.log('[JobExtraction] ✓ Company:', jobData.company);
+                break;
+            }
+        }
+        
+        // Extract location
+        const locationSelectors = [
+            '.job-details-jobs-unified-top-card__primary-description-without-tagline',
+            '.jobs-details-top-card__primary-description',
+            '[data-test-id="job-location"]',
+            '.jobs-details__primary-description'
+        ];
+        
+        for (const selector of locationSelectors) {
+            const locationElement = document.querySelector(selector);
+            if (locationElement) {
+                const locationText = locationElement.innerText?.trim() || '';
+                // Try to extract location from text (usually contains location info)
+                if (locationText) {
+                    jobData.location = locationText.split('·')[0]?.trim() || locationText;
+                    console.log('[JobExtraction] ✓ Location:', jobData.location);
+                    break;
+                }
+            }
+        }
+        
+        // Extract full job description
+        const descriptionSelectors = [
+            '.jobs-description-content__text',
+            '.jobs-description__text',
+            '[data-test-id="job-description"]',
+            '.jobs-box__html-content',
+            '#job-details'
+        ];
+        
+        for (const selector of descriptionSelectors) {
+            const descElement = document.querySelector(selector);
+            if (descElement && descElement.innerText?.trim()) {
+                jobData.description = descElement.innerText.trim();
+                console.log('[JobExtraction] ✓ Description extracted:', jobData.description.length, 'chars');
+                break;
+            }
+        }
+        
+        // If no description found, try to get from main content
+        if (!jobData.description) {
+            const mainContent = document.querySelector('main') || document.body;
+            const allText = mainContent.innerText || '';
+            // Try to extract meaningful job description (skip header/nav content)
+            const jobSections = allText.split('\n').filter(line => line.trim().length > 20);
+            if (jobSections.length > 0) {
+                jobData.description = jobSections.join('\n').substring(0, 50000);
+            }
+        }
+        
+        // Extract employment type and other metadata
+        const metadataText = document.body.innerText || '';
+        
+        // Look for employment type
+        const employmentTypes = ['Full-time', 'Part-time', 'Contract', 'Temporary', 'Internship', 'Volunteer'];
+        for (const type of employmentTypes) {
+            if (metadataText.includes(type)) {
+                jobData.employmentType = type;
+                break;
+            }
+        }
+        
+        // Look for seniority level
+        const seniorityLevels = ['Internship', 'Entry level', 'Associate', 'Mid-Senior level', 'Director', 'Executive'];
+        for (const level of seniorityLevels) {
+            if (metadataText.includes(level)) {
+                jobData.seniorityLevel = level;
+                break;
+            }
+        }
+        
+        // Extract posted date
+        const dateSelectors = [
+            '.jobs-details-top-card__posted-date',
+            '[data-test-id="job-posted-date"]',
+            '.jobs-details__posted-date'
+        ];
+        
+        for (const selector of dateSelectors) {
+            const dateElement = document.querySelector(selector);
+            if (dateElement && dateElement.innerText?.trim()) {
+                jobData.postedDate = dateElement.innerText.trim();
+                break;
+            }
+        }
+        
+        // Extract applicant count if available
+        const applicantMatch = metadataText.match(/(\d+)\s*(?:applicant|people\s+applied)/i);
+        if (applicantMatch) {
+            jobData.applicants = applicantMatch[1];
+        }
+        
+        console.log('[JobExtraction] ✓ Job extraction complete');
+        console.log('[JobExtraction]   Title:', jobData.title);
+        console.log('[JobExtraction]   Company:', jobData.company);
+        console.log('[JobExtraction]   Location:', jobData.location);
+        console.log('[JobExtraction]   Description length:', jobData.description.length);
+        
+    } catch (e) {
+        console.error('[JobExtraction] ✗ Error:', e);
+        throw e;
+    }
+    
+    return jobData;
 }
 
 /**

@@ -14,6 +14,7 @@
         <nav class="product-nav">
             <button class="product-btn active" data-product="marketing">📊 Marketing</button>
             <button class="product-btn" data-product="content">✍️ Content Copilot</button>
+            <button class="product-btn" data-product="jobs">💼 Job Application</button>
             <button class="product-btn settings-btn" data-target="tab-settings">⚙️ Settings</button>
         </nav>
 
@@ -27,7 +28,14 @@
         <nav class="main-nav content-nav hidden" id="content-nav">
             <button class="nav-item" data-target="tab-inspire">Inspire</button>
             <button class="nav-item" data-target="tab-create">Create</button>
-            <button class="nav-item" data-target="tab-results-content">Results</button>
+            <button class="nav-item" data-target="tab-results-content">History</button>
+        </nav>
+
+        <!-- Job Application Product Tabs -->
+        <nav class="main-nav jobs-nav hidden" id="jobs-nav">
+            <button class="nav-item" data-target="tab-job-analyze">Analyze Job</button>
+            <button class="nav-item" data-target="tab-cv-edit">CV Analysis</button>
+            <button class="nav-item" data-target="tab-job-results">Results</button>
         </nav>
 
         <main class="content-area">
@@ -325,6 +333,134 @@
                     <button id="generateContentBtn" class="primary-btn">Generate Content</button>
                     <div class="status-badge" id="contentStatusBadge">Ready</div>
                 </div>
+            </div>
+
+            <!-- TAB: JOB ANALYZE -->
+            <div id="tab-job-analyze" class="view hidden">
+                <header class="section-header">
+                    <h2>💼 Job Application Assistant</h2>
+                    <p class="section-subtitle">Analyze job postings and optimize your CV for better applications</p>
+                </header>
+
+                <!-- Job Analysis Section -->
+                <details class="config-card" open>
+                    <summary>🔍 Analyze Current Job Posting</summary>
+                    <div class="card-body">
+                        <p class="settings-description" style="margin-bottom: 12px;">Navigate to a LinkedIn job posting page, then click the button below to extract and analyze the job details.</p>
+                        <div class="button-group-with-status">
+                            <button id="analyzeJobBtn" class="primary-btn">Analyze Current Job</button>
+                            <div class="status-badge" id="jobAnalysisStatusBadge">Ready</div>
+                        </div>
+                        <small class="settings-hint" style="display: block; margin-top: 8px;">Make sure you're on a LinkedIn job posting page (e.g., linkedin.com/jobs/view/...)</small>
+                        
+                        <div id="jobAnalysisResults" class="hidden" style="margin-top: 16px;">
+                            <div class="content-analysis-card">
+                                <h4 style="margin-bottom: 12px;">Job Details</h4>
+                                <div id="jobDetailsDisplay"></div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- CV Source Selection -->
+                <details class="config-card" style="margin-top: 16px;">
+                    <summary>📄 Select CV Source</summary>
+                    <div class="card-body">
+                        <p class="settings-description" style="margin-bottom: 12px;">Choose how you want to provide your CV for analysis:</p>
+                        
+                        <div class="cv-source-options">
+                            <label class="cv-source-option">
+                                <input type="radio" name="cvSource" value="linkedin" checked />
+                                <div class="cv-source-content">
+                                    <strong>Use LinkedIn Profile</strong>
+                                    <small>Use your captured LinkedIn profile as CV</small>
+                                </div>
+                            </label>
+                            
+                            <label class="cv-source-option">
+                                <input type="radio" name="cvSource" value="upload" />
+                                <div class="cv-source-content">
+                                    <strong>Upload CV File</strong>
+                                    <small>Upload PDF, DOCX, DOC, or TXT file</small>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <!-- Status message for LinkedIn profile -->
+                        <div id="linkedinProfileStatus" class="settings-hint" style="margin-top: 12px; display: none;"></div>
+                        
+                        <div id="cvUploadSection" class="hidden" style="margin-top: 12px;">
+                            <input type="file" id="cvFileInput" accept=".txt,.docx,.doc,.pdf" style="display: none;" />
+                            <button id="selectCvFileBtn" class="secondary-btn">Choose CV File</button>
+                            <div id="cvFileName" class="settings-hint" style="margin-top: 8px;"></div>
+                            <small class="settings-hint" style="display: block; margin-top: 4px;">Supported formats: TXT, DOCX, DOC, PDF</small>
+                        </div>
+                        
+                        <!-- Button to proceed with CV analysis -->
+                        <div id="proceedWithCvBtnContainer" class="hidden" style="margin-top: 16px;">
+                            <button id="proceedWithCvBtn" class="primary-btn">Analyze CV Against Job</button>
+                            <small class="settings-hint" style="display: block; margin-top: 8px;">Click to analyze your CV and get optimization suggestions</small>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <!-- TAB: CV ANALYSIS -->
+            <div id="tab-cv-edit" class="view hidden">
+                <header class="section-header">
+                    <h2>📊 CV Analysis & Optimization</h2>
+                    <p class="section-subtitle">Get AI-powered suggestions to optimize your CV for this job</p>
+                </header>
+
+                <div id="cvEditorEmptyState" class="empty-state">
+                    Analyze a job posting first to get started with CV optimization.
+                </div>
+
+                <div id="cvEditorContent" class="hidden">
+                    <!-- Match Score Box -->
+                    <div id="cvMatchScoreContainer" style="display: none; margin-bottom: 16px;"></div>
+
+                    <!-- CV Analysis Results -->
+                    <div class="content-result-card" style="margin-bottom: 16px;">
+                        <div class="content-result-header">
+                            <h3>CV Analysis & Suggestions</h3>
+                            <div class="content-actions">
+                                <button id="regenerateAnalysisBtn" class="secondary-btn" style="font-size: 12px; padding: 6px 12px;">🔄 Re-analyze</button>
+                            </div>
+                        </div>
+                        <div id="cvAnalysisStatus" class="hidden" style="padding: 16px; text-align: center; color: var(--text-secondary);">
+                            <div style="display: inline-block; width: 20px; height: 20px; border: 3px solid var(--accent-color); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;"></div>
+                            <span id="cvAnalysisStatusText">Analyzing CV against job requirements...</span>
+                        </div>
+                        <div id="cvAnalysisResults" class="content-text"></div>
+                    </div>
+
+                    <!-- Suggestions Accordion -->
+                    <details class="details-accordion" style="margin-top: 16px;">
+                        <summary class="accordion-summary">💡 Detailed Suggestions</summary>
+                        <div class="accordion-body">
+                            <div id="detailedSuggestionsList"></div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- TAB: JOB RESULTS -->
+            <div id="tab-job-results" class="view hidden">
+                <header class="section-header">
+                    <h2>📊 Application History</h2>
+                    <p class="section-subtitle">View your job applications and CV optimizations</p>
+                </header>
+
+                <details class="config-card">
+                    <summary>📚 Saved Job Analyses</summary>
+                    <div class="card-body">
+                        <p class="settings-description" style="margin-bottom: 12px;">Access all your previously analyzed jobs and CV optimizations.</p>
+                        <div id="jobApplicationsLibrary">
+                            <p class="empty-state">No saved job analyses yet. Analyze a job to get started.</p>
+                        </div>
+                    </div>
+                </details>
             </div>
 
             <!-- TAB: RESULTS (Content Results) -->

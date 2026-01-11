@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const productBtns = document.querySelectorAll('.product-btn');
     const marketingNav = document.getElementById('marketing-nav');
     const contentNav = document.getElementById('content-nav');
+    const jobsNav = document.getElementById('jobs-nav');
     
     // Container Views
     const tabBtns = document.querySelectorAll('.nav-item');
@@ -94,6 +95,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Current product state
     let currentProduct = 'marketing';
+    
+    // Job Application elements
+    const analyzeJobBtn = document.getElementById('analyzeJobBtn');
+    const jobAnalysisStatusBadge = document.getElementById('jobAnalysisStatusBadge');
+    const jobAnalysisResults = document.getElementById('jobAnalysisResults');
+    const jobDetailsDisplay = document.getElementById('jobDetailsDisplay');
+    const cvSourceRadios = document.querySelectorAll('input[name="cvSource"]');
+    const cvUploadSection = document.getElementById('cvUploadSection');
+    const cvFileInput = document.getElementById('cvFileInput');
+    const selectCvFileBtn = document.getElementById('selectCvFileBtn');
+    const cvFileName = document.getElementById('cvFileName');
+    const cvEditorEmptyState = document.getElementById('cvEditorEmptyState');
+    const cvEditorContent = document.getElementById('cvEditorContent');
+    const cvAnalysisResults = document.getElementById('cvAnalysisResults');
+    const cvAnalysisStatus = document.getElementById('cvAnalysisStatus');
+    const cvAnalysisStatusText = document.getElementById('cvAnalysisStatusText');
+    const cvModularDisplay = document.getElementById('cvModularDisplay');
+    const cvMatchScoreContainer = document.getElementById('cvMatchScoreContainer');
+    const regenerateAnalysisBtn = document.getElementById('regenerateAnalysisBtn');
+    const cvMatchScore = document.getElementById('cvMatchScore');
+    const detailedSuggestionsList = document.getElementById('detailedSuggestionsList');
+    const jobApplicationsLibrary = document.getElementById('jobApplicationsLibrary');
+    const proceedWithCvBtnContainer = document.getElementById('proceedWithCvBtnContainer');
+    const proceedWithCvBtn = document.getElementById('proceedWithCvBtn');
+    const linkedinProfileStatus = document.getElementById('linkedinProfileStatus');
+    
+    // Store job and CV data
+    let currentJobData = null;
+    let currentCvData = null;
+    let currentCvSuggestions = null;
+    let currentCvStructured = null; // Store structured CV object
+    let finalCvStructured = null; // Store final CV with AI additions (hidden, used for download)
 
     // Result Elements (Scores)
     const scoreCircle = document.getElementById('scoreCircle');
@@ -827,11 +860,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (product === 'marketing') {
             if (marketingNav) marketingNav.classList.remove('hidden');
             if (contentNav) contentNav.classList.add('hidden');
+            if (jobsNav) jobsNav.classList.add('hidden');
             // Show first marketing tab
             showTab('tab-compose');
         } else if (product === 'content') {
             if (marketingNav) marketingNav.classList.add('hidden');
             if (contentNav) contentNav.classList.remove('hidden');
+            if (jobsNav) jobsNav.classList.add('hidden');
             // Show first content tab (Inspire) and set it as active
             if (contentNav) {
                 contentNav.querySelectorAll('.nav-item').forEach((btn, index) => {
@@ -843,9 +878,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
             showTab('tab-inspire');
+        } else if (product === 'jobs') {
+            if (marketingNav) marketingNav.classList.add('hidden');
+            if (contentNav) contentNav.classList.add('hidden');
+            if (jobsNav) jobsNav.classList.remove('hidden');
+            // Show first jobs tab (Analyze Job) and set it as active
+            if (jobsNav) {
+                jobsNav.querySelectorAll('.nav-item').forEach((btn, index) => {
+                    if (index === 0) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+            showTab('tab-job-analyze');
         } else if (product === 'settings') {
             if (marketingNav) marketingNav.classList.add('hidden');
             if (contentNav) contentNav.classList.add('hidden');
+            if (jobsNav) jobsNav.classList.add('hidden');
             // Show settings tab
             showTab('tab-settings');
         }
@@ -855,7 +906,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     function showTab(targetId) {
         // Update Nav Buttons (only for current product's nav, or if settings)
         if (targetId !== 'tab-settings') {
-            const currentNav = currentProduct === 'marketing' ? marketingNav : contentNav;
+            let currentNav = null;
+            if (currentProduct === 'marketing') {
+                currentNav = marketingNav;
+            } else if (currentProduct === 'content') {
+                currentNav = contentNav;
+            } else if (currentProduct === 'jobs') {
+                currentNav = jobsNav;
+            }
             if (currentNav) {
                 currentNav.querySelectorAll('.nav-item').forEach(btn => {
                     if (btn.dataset.target === targetId) btn.classList.add('active');
@@ -887,6 +945,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadContentLibrary();
         } else if (targetId === 'tab-create') {
             loadCustomTopics();
+        } else if (targetId === 'tab-job-results') {
+            loadJobApplicationsLibrary();
         }
     }
 
@@ -4647,6 +4707,1817 @@ Return ONLY a JSON object with this structure:
             }
         });
     }
+    
+    // === Job Application Functionality ===
+    
+    // Function to check if CV is ready and show proceed button
+    function checkCvReady() {
+        if (currentJobData && currentCvData) {
+            // Both job and CV are available, show proceed button
+            if (proceedWithCvBtnContainer) {
+                proceedWithCvBtnContainer.classList.remove('hidden');
+            }
+            log('[CV] ✓ Ready to analyze: Job and CV both available');
+        } else {
+            // Hide button if not ready
+            if (proceedWithCvBtnContainer) {
+                proceedWithCvBtnContainer.classList.add('hidden');
+            }
+            if (!currentJobData && currentCvData) {
+                log('[CV] Waiting for job analysis...');
+            } else if (currentJobData && !currentCvData) {
+                log('[CV] Waiting for CV source selection...');
+            }
+        }
+    }
+    
+    // CV Source Selection
+    if (cvSourceRadios && cvSourceRadios.length > 0) {
+        cvSourceRadios.forEach(radio => {
+            radio.addEventListener('change', async (e) => {
+                if (e.target.value === 'upload') {
+                    if (cvUploadSection) cvUploadSection.classList.remove('hidden');
+                    // Hide proceed button until file is uploaded
+                    if (proceedWithCvBtnContainer) {
+                        proceedWithCvBtnContainer.classList.add('hidden');
+                    }
+                } else {
+                    if (cvUploadSection) cvUploadSection.classList.add('hidden');
+                }
+                
+                // If LinkedIn profile is selected, load it
+                if (e.target.value === 'linkedin') {
+                    const loaded = await loadLinkedInProfileAsCv();
+                    if (loaded) {
+                        // Show success message
+                        if (linkedinProfileStatus) {
+                            linkedinProfileStatus.textContent = '✓ LinkedIn profile loaded successfully';
+                            linkedinProfileStatus.style.color = 'var(--accent-color)';
+                            linkedinProfileStatus.style.display = 'block';
+                        }
+                        log('[CV] LinkedIn profile selected and loaded');
+                    } else {
+                        // Show error message
+                        if (linkedinProfileStatus) {
+                            linkedinProfileStatus.textContent = '⚠ No LinkedIn profile found. Please go to Settings and click "Capture My Profile" first.';
+                            linkedinProfileStatus.style.color = '#ef4444';
+                            linkedinProfileStatus.style.display = 'block';
+                        }
+                        log('[CV] ⚠ LinkedIn profile not found in storage');
+                    }
+                    // Check if ready to proceed
+                    checkCvReady();
+                } else {
+                    // Hide status message when other option is selected
+                    if (linkedinProfileStatus) {
+                        linkedinProfileStatus.style.display = 'none';
+                    }
+                }
+            });
+        });
+    }
+    
+    // CV File Selection
+    if (selectCvFileBtn && cvFileInput) {
+        selectCvFileBtn.addEventListener('click', () => {
+            cvFileInput.click();
+        });
+        
+        cvFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (cvFileName) {
+                    cvFileName.textContent = `Selected: ${file.name} (Processing...)`;
+                    cvFileName.style.color = 'var(--text-secondary)';
+                }
+                log(`[CV] File selected: ${file.name}`);
+                
+                // Process file via backend
+                try {
+                    const currentApiKey = await getApiKey();
+                    
+                    // Create FormData for file upload
+                    const formData = new FormData();
+                    formData.append('cvFile', file);
+                    
+                    // Send to backend for processing
+                    const response = await fetch(`${BACKEND_URL}/api/process-cv-file`, {
+                        method: 'POST',
+                        headers: {
+                            'x-api-key': currentApiKey
+                            // Don't set Content-Type - let browser set it with boundary for FormData
+                        },
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to process file');
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (!result.success || !result.content) {
+                        throw new Error('File processing failed: No content extracted');
+                    }
+                    
+                    // Store CV data with structured object if available
+                    currentCvData = {
+                        source: 'upload',
+                        fileName: result.fileName,
+                        fileType: result.fileType,
+                        content: result.content,
+                        structured: result.structured || null // Store structured CV object
+                    };
+                    
+                    // Store structured CV separately for easy access
+                    if (result.structured) {
+                        currentCvStructured = result.structured;
+                        finalCvStructured = null; // Reset final CV until suggestions are applied
+                        log(`[CV] ✓ CV structured into JSON object`);
+                    }
+                    
+                    log(`[CV] File processed successfully: ${result.characterCount} chars, ${result.wordCount} words`);
+                    if (cvFileName) {
+                        const statusText = result.structured 
+                            ? `Selected: ${result.fileName} (✓ ${result.wordCount} words, structured)`
+                            : `Selected: ${result.fileName} (✓ ${result.wordCount} words)`;
+                        cvFileName.textContent = statusText;
+                        cvFileName.style.color = 'var(--accent-color)';
+                    }
+                    
+                    // Check if ready to proceed
+                    checkCvReady();
+                    
+                    // If job is already analyzed, automatically trigger CV analysis
+                    if (currentJobData && currentCvData) {
+                        // Small delay to ensure UI updates
+                        setTimeout(async () => {
+                            // Switch to CV Analysis tab and trigger analysis
+                            showTab('tab-cv-edit');
+                            await analyzeCvAgainstJob();
+                        }, 300);
+                    }
+                } catch (error) {
+                    log(`[CV] Error processing file: ${error.message}`);
+                    if (cvFileName) {
+                        cvFileName.textContent = `Error: ${error.message}`;
+                        cvFileName.style.color = '#ef4444';
+                    }
+                    alert('Failed to process file: ' + error.message);
+                }
+            }
+        });
+    }
+    
+    // Analyze Job Button
+    if (analyzeJobBtn) {
+        analyzeJobBtn.addEventListener('click', async () => {
+            try {
+                analyzeJobBtn.disabled = true;
+                if (jobAnalysisStatusBadge) jobAnalysisStatusBadge.textContent = 'Extracting...';
+                
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (!tab || !tab.url.includes('linkedin.com/jobs/')) {
+                    throw new Error('Please navigate to a LinkedIn job posting page');
+                }
+                
+                if (!(await ensureContentScript(tab.id))) {
+                    throw new Error('Please refresh the page');
+                }
+                
+                // Step 1: Extract raw job data from page
+                log('[Job] Extracting raw job data from page...');
+                const response = await chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_JOB' });
+                if (!response?.success) {
+                    throw new Error(response?.error || 'Failed to extract job details');
+                }
+                
+                const rawJobData = response.data;
+                log('[Job] ✓ Raw data extracted');
+                
+                // Step 2: Use GPT-4o to analyze and structure job details
+                if (jobAnalysisStatusBadge) jobAnalysisStatusBadge.textContent = 'Analyzing with AI...';
+                
+                const currentApiKey = await getApiKey();
+                const useBackend = await chrome.storage.local.get('use_backend_credits');
+                const useBackendCredits = useBackend.use_backend_credits !== false;
+                
+                let openaiApiKey = null;
+                if (!useBackendCredits) {
+                    const stored = await chrome.storage.local.get('openai_api_key');
+                    openaiApiKey = stored.openai_api_key;
+                    if (!openaiApiKey) {
+                        throw new Error('Please set your OpenAI API key in Settings');
+                    }
+                }
+                
+                const jobAnalysisPrompt = `You are an expert job posting analyzer. Analyze the following LinkedIn job posting and extract all relevant details in a structured format.
+
+RAW JOB DATA:
+Title: ${rawJobData.title || 'N/A'}
+Company: ${rawJobData.company || 'N/A'}
+Location: ${rawJobData.location || 'N/A'}
+Employment Type: ${rawJobData.employmentType || 'N/A'}
+Seniority Level: ${rawJobData.seniorityLevel || 'N/A'}
+Posted Date: ${rawJobData.postedDate || 'N/A'}
+Applicants: ${rawJobData.applicants || 'N/A'}
+Job URL: ${rawJobData.jobUrl || 'N/A'}
+
+FULL JOB DESCRIPTION:
+${rawJobData.description || 'N/A'}
+
+Please analyze this job posting and extract the following structured information:
+
+1. Job Title (exact title)
+2. Company Name
+3. Location (city, state, country)
+4. Employment Type (Full-time, Part-time, Contract, etc.)
+5. Seniority Level (Entry level, Mid-Senior, Director, etc.)
+6. Job Function (e.g., Engineering, Sales, Marketing)
+7. Industries (array of relevant industries)
+8. Description (full job description)
+9. Requirements (extracted requirements section)
+10. Responsibilities (extracted responsibilities/duties)
+11. Skills Required (array of technical and soft skills)
+12. Qualifications (education, certifications, experience requirements)
+13. Benefits (if mentioned)
+14. Salary Range (if mentioned)
+15. Posted Date
+16. Applicants Count
+
+Format your response as JSON with this exact structure:
+{
+  "jobTitle": "string",
+  "companyName": "string",
+  "location": "string",
+  "employmentType": "string",
+  "seniorityLevel": "string",
+  "jobFunction": "string",
+  "industries": ["industry1", "industry2"],
+  "description": "full description text",
+  "requirements": "requirements section text",
+  "responsibilities": "responsibilities section text",
+  "skillsRequired": ["skill1", "skill2", "skill3"],
+  "qualifications": {
+    "education": "education requirements",
+    "experience": "experience requirements",
+    "certifications": "certifications if any"
+  },
+  "benefits": ["benefit1", "benefit2"],
+  "salaryRange": "salary range if mentioned",
+  "postedDate": "posted date",
+  "applicantsCount": "number of applicants if mentioned"
+}
+
+Be thorough and extract all available information. If a field is not mentioned, use null or an empty array/string as appropriate.`;
+                
+                const analysisRequestBody = {
+                    request: {
+                        model: 'gpt-5.2',
+                        messages: [
+                            { role: 'system', content: 'You are an expert job posting analyzer. Extract all relevant details from job postings in a structured JSON format.' },
+                            { role: 'user', content: jobAnalysisPrompt }
+                        ],
+                        temperature: 0.3,
+                        response_format: { type: 'json_object' }
+                    },
+                    processType: 'job_analysis',
+                    processDescription: `Job analysis for: ${rawJobData.title || 'Unknown'}`
+                };
+                
+                let analysisResponse;
+                if (useBackendCredits) {
+                    analysisResponse = await fetch(`${BACKEND_URL}/api/openai-proxy`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': currentApiKey
+                        },
+                        body: JSON.stringify(analysisRequestBody)
+                    });
+                } else {
+                    analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${openaiApiKey}`
+                        },
+                        body: JSON.stringify(analysisRequestBody.request)
+                    });
+                }
+                
+                if (!analysisResponse.ok) {
+                    const errorData = await analysisResponse.json();
+                    throw new Error(errorData.error?.message || 'Failed to analyze job with AI');
+                }
+                
+                const analysisData = await analysisResponse.json();
+                const analysisText = analysisData.response?.choices?.[0]?.message?.content || analysisData.choices?.[0]?.message?.content || '';
+                
+                // Parse analyzed job data
+                let analyzedJobData = null;
+                try {
+                    analyzedJobData = JSON.parse(analysisText);
+                } catch (e) {
+                    // Try to extract JSON from response
+                    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        analyzedJobData = JSON.parse(jsonMatch[0]);
+                    } else {
+                        throw new Error('Failed to parse AI analysis response');
+                    }
+                }
+                
+                log('[Job] ✓ AI analysis complete');
+                
+                // Step 3: Save to database
+                if (jobAnalysisStatusBadge) jobAnalysisStatusBadge.textContent = 'Saving...';
+                
+                const saveResponse = await fetch(`${BACKEND_URL}/api/job-analyses`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': currentApiKey
+                    },
+                    body: JSON.stringify({
+                        jobUrl: rawJobData.jobUrl || tab.url,
+                        jobTitle: analyzedJobData.jobTitle || rawJobData.title,
+                        companyName: analyzedJobData.companyName || rawJobData.company,
+                        location: analyzedJobData.location || rawJobData.location,
+                        employmentType: analyzedJobData.employmentType || rawJobData.employmentType,
+                        seniorityLevel: analyzedJobData.seniorityLevel || rawJobData.seniorityLevel,
+                        jobFunction: analyzedJobData.jobFunction || null,
+                        industries: analyzedJobData.industries || [],
+                        description: analyzedJobData.description || rawJobData.description,
+                        requirements: analyzedJobData.requirements || null,
+                        responsibilities: analyzedJobData.responsibilities || null,
+                        skillsRequired: analyzedJobData.skillsRequired || [],
+                        qualifications: analyzedJobData.qualifications || null,
+                        benefits: analyzedJobData.benefits || [],
+                        salaryRange: analyzedJobData.salaryRange || null,
+                        postedDate: analyzedJobData.postedDate || rawJobData.postedDate,
+                        applicantsCount: analyzedJobData.applicantsCount || rawJobData.applicants,
+                        rawData: rawJobData,
+                        analyzedData: analyzedJobData
+                    })
+                });
+                
+                if (!saveResponse.ok) {
+                    const errorData = await saveResponse.json();
+                    log(`[Job] ⚠ Failed to save to database: ${errorData.error}`);
+                    // Continue even if save fails
+                } else {
+                    const saveData = await saveResponse.json();
+                    log(`[Job] ✓ Saved to database: ${saveData.jobAnalysisId}`);
+                }
+                
+                // Store in currentJobData for use in CV analysis
+                currentJobData = {
+                    ...analyzedJobData,
+                    jobUrl: rawJobData.jobUrl || tab.url,
+                    rawData: rawJobData
+                };
+                
+                // Display job details
+                if (jobDetailsDisplay) {
+                    jobDetailsDisplay.innerHTML = `
+                        <div class="job-detail-item">
+                            <strong>Title:</strong>
+                            <p>${analyzedJobData.jobTitle || rawJobData.title || 'N/A'}</p>
+                        </div>
+                        <div class="job-detail-item">
+                            <strong>Company:</strong>
+                            <p>${analyzedJobData.companyName || rawJobData.company || 'N/A'}</p>
+                        </div>
+                        <div class="job-detail-item">
+                            <strong>Location:</strong>
+                            <p>${analyzedJobData.location || rawJobData.location || 'N/A'}</p>
+                        </div>
+                        <div class="job-detail-item">
+                            <strong>Employment Type:</strong>
+                            <p>${analyzedJobData.employmentType || rawJobData.employmentType || 'N/A'}</p>
+                        </div>
+                        <div class="job-detail-item">
+                            <strong>Seniority Level:</strong>
+                            <p>${analyzedJobData.seniorityLevel || rawJobData.seniorityLevel || 'N/A'}</p>
+                        </div>
+                        ${analyzedJobData.jobFunction ? `<div class="job-detail-item"><strong>Job Function:</strong><p>${analyzedJobData.jobFunction}</p></div>` : ''}
+                        ${analyzedJobData.industries && analyzedJobData.industries.length > 0 ? `<div class="job-detail-item"><strong>Industries:</strong><p>${analyzedJobData.industries.join(', ')}</p></div>` : ''}
+                        ${analyzedJobData.skillsRequired && analyzedJobData.skillsRequired.length > 0 ? `<div class="job-detail-item"><strong>Skills Required:</strong><p>${analyzedJobData.skillsRequired.join(', ')}</p></div>` : ''}
+                        ${analyzedJobData.salaryRange ? `<div class="job-detail-item"><strong>Salary Range:</strong><p>${analyzedJobData.salaryRange}</p></div>` : ''}
+                        <div class="job-detail-item">
+                            <strong>Description:</strong>
+                            <p>${analyzedJobData.description ? analyzedJobData.description.substring(0, 500) + '...' : rawJobData.description ? rawJobData.description.substring(0, 500) + '...' : 'N/A'}</p>
+                        </div>
+                    `;
+                }
+                
+                if (jobAnalysisResults) jobAnalysisResults.classList.remove('hidden');
+                if (jobAnalysisStatusBadge) jobAnalysisStatusBadge.textContent = 'Complete';
+                
+                log('[Job] ✓ Job analysis complete and saved');
+                
+                // Auto-load LinkedIn profile if not already loaded
+                if (!currentCvData) {
+                    const loaded = await loadLinkedInProfileAsCv();
+                    if (loaded) {
+                        // Auto-select LinkedIn radio button if profile was loaded
+                        const linkedinRadio = document.querySelector('input[name="cvSource"][value="linkedin"]');
+                        if (linkedinRadio) {
+                            linkedinRadio.checked = true;
+                        }
+                        // Check if ready to proceed
+                        checkCvReady();
+                    }
+                } else {
+                    // CV already loaded, check if ready
+                    checkCvReady();
+                }
+                
+                log('[Job] Job analyzed. Select CV source and click "Analyze CV Against Job" to continue.');
+                
+            } catch (error) {
+                log(`[Job] ✗ Error: ${error.message}`);
+                alert('Error analyzing job: ' + error.message);
+                if (jobAnalysisStatusBadge) jobAnalysisStatusBadge.textContent = 'Error';
+            } finally {
+                analyzeJobBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Analyze CV against Job
+    async function analyzeCvAgainstJob() {
+        if (!currentJobData || !currentCvData) {
+            alert('Please analyze a job and provide your CV first');
+            return;
+        }
+        
+        let statusInterval = null; // Declare at function scope
+        
+        try {
+            // Ensure CV Analysis tab is visible and content area is shown
+            showTab('tab-cv-edit');
+            if (cvEditorEmptyState) cvEditorEmptyState.classList.add('hidden');
+            if (cvEditorContent) cvEditorContent.classList.remove('hidden');
+            
+            // Hide match score container during analysis
+            if (cvMatchScoreContainer) {
+                cvMatchScoreContainer.style.display = 'none';
+            }
+            
+            // Show loading status with dynamic messages
+            if (cvAnalysisStatus) {
+                cvAnalysisStatus.classList.remove('hidden');
+            }
+            if (cvAnalysisResults) {
+                // Show intermediate steps in the results area
+                cvAnalysisResults.innerHTML = `
+                    <div style="padding: 16px;">
+                        <div style="font-size: 12px; font-weight: 600; color: var(--accent-color); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Analysis in Progress</div>
+                        <div id="cvAnalysisSteps" style="display: flex; flex-direction: column; gap: 12px;">
+                            <div class="analysis-step" data-step="0" style="display: flex; align-items: center; gap: 10px; padding: 8px; background: var(--input-bg); border-radius: 6px;">
+                                <div class="step-icon" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--accent-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <div class="step-spinner" style="width: 10px; height: 10px; border: 2px solid var(--accent-color); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                                </div>
+                                <div style="flex: 1; font-size: 11px; color: var(--text-primary);">Analyzing CV against job requirements...</div>
+                            </div>
+                            <div class="analysis-step" data-step="1" style="display: flex; align-items: center; gap: 10px; padding: 8px; opacity: 0.5;">
+                                <div class="step-icon" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"></div>
+                                <div style="flex: 1; font-size: 11px; color: var(--text-secondary);">Reviewing your skills and experience...</div>
+                            </div>
+                            <div class="analysis-step" data-step="2" style="display: flex; align-items: center; gap: 10px; padding: 8px; opacity: 0.5;">
+                                <div class="step-icon" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"></div>
+                                <div style="flex: 1; font-size: 11px; color: var(--text-secondary);">Comparing CV with job description...</div>
+                            </div>
+                            <div class="analysis-step" data-step="3" style="display: flex; align-items: center; gap: 10px; padding: 8px; opacity: 0.5;">
+                                <div class="step-icon" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"></div>
+                                <div style="flex: 1; font-size: 11px; color: var(--text-secondary);">Identifying strengths and gaps...</div>
+                            </div>
+                            <div class="analysis-step" data-step="4" style="display: flex; align-items: center; gap: 10px; padding: 8px; opacity: 0.5;">
+                                <div class="step-icon" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"></div>
+                                <div style="flex: 1; font-size: 11px; color: var(--text-secondary);">Generating personalized suggestions...</div>
+                            </div>
+                            <div class="analysis-step" data-step="5" style="display: flex; align-items: center; gap: 10px; padding: 8px; opacity: 0.5;">
+                                <div class="step-icon" style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"></div>
+                                <div style="flex: 1; font-size: 11px; color: var(--text-secondary);">Finalizing analysis results...</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            if (regenerateAnalysisBtn) {
+                regenerateAnalysisBtn.disabled = true;
+                regenerateAnalysisBtn.textContent = 'Analyzing...';
+            }
+            
+            // Update status text
+            if (cvAnalysisStatusText) {
+                cvAnalysisStatusText.textContent = 'Analyzing CV against job requirements...';
+            }
+            
+            // Function to update step progress
+            const updateStepProgress = (stepIndex) => {
+                const stepsContainer = document.getElementById('cvAnalysisSteps');
+                if (!stepsContainer) return;
+                
+                const steps = stepsContainer.querySelectorAll('.analysis-step');
+                steps.forEach((step, index) => {
+                    const stepIcon = step.querySelector('.step-icon');
+                    const stepText = step.querySelector('div:last-child');
+                    
+                    if (index < stepIndex) {
+                        // Completed step
+                        step.style.opacity = '1';
+                        step.style.background = 'rgba(34, 197, 94, 0.1)';
+                        stepIcon.innerHTML = '✓';
+                        stepIcon.style.border = '2px solid #22c55e';
+                        stepIcon.style.background = '#22c55e';
+                        stepIcon.style.color = 'white';
+                        stepIcon.style.fontSize = '12px';
+                        stepText.style.color = 'var(--text-primary)';
+                    } else if (index === stepIndex) {
+                        // Current step
+                        step.style.opacity = '1';
+                        step.style.background = 'var(--input-bg)';
+                        stepIcon.innerHTML = '<div class="step-spinner" style="width: 10px; height: 10px; border: 2px solid var(--accent-color); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+                        stepIcon.style.border = '2px solid var(--accent-color)';
+                        stepIcon.style.background = 'transparent';
+                        stepText.style.color = 'var(--text-primary)';
+                    } else {
+                        // Pending step
+                        step.style.opacity = '0.5';
+                        step.style.background = 'transparent';
+                        stepIcon.innerHTML = '';
+                        stepIcon.style.border = '2px solid var(--border-color)';
+                        stepIcon.style.background = 'transparent';
+                        stepText.style.color = 'var(--text-secondary)';
+                    }
+                });
+            };
+            
+            // Update status text and step progress
+            const statusMessages = [
+                'Analyzing CV against job requirements...',
+                'Reviewing your skills and experience...',
+                'Comparing CV with job description...',
+                'Identifying strengths and gaps...',
+                'Generating personalized suggestions...',
+                'Finalizing analysis results...'
+            ];
+            
+            let statusIndex = 0;
+            
+            const updateStatus = () => {
+                if (statusIndex < statusMessages.length) {
+                    if (cvAnalysisStatusText) {
+                        cvAnalysisStatusText.textContent = statusMessages[statusIndex];
+                    }
+                    updateStepProgress(statusIndex);
+                    statusIndex++;
+                } else if (statusIndex >= statusMessages.length) {
+                    // Loop back to beginning if analysis takes longer
+                    statusIndex = 0;
+                    if (cvAnalysisStatusText) {
+                        cvAnalysisStatusText.textContent = statusMessages[statusIndex];
+                    }
+                    updateStepProgress(statusIndex);
+                    statusIndex++;
+                }
+            };
+            
+            // Initial status
+            updateStepProgress(0);
+            
+            // Update status every 2 seconds
+            statusInterval = setInterval(updateStatus, 2000);
+            
+            const currentApiKey = await getApiKey();
+            const useBackend = await chrome.storage.local.get('use_backend_credits');
+            const useBackendCredits = useBackend.use_backend_credits !== false;
+            
+            let openaiApiKey = null;
+            if (!useBackendCredits) {
+                const stored = await chrome.storage.local.get('openai_api_key');
+                openaiApiKey = stored.openai_api_key;
+                if (!openaiApiKey) {
+                    throw new Error('Please set your OpenAI API key in Settings');
+                }
+            }
+            
+            const cvContent = currentCvData.content;
+            const jobDescription = currentJobData.description || currentJobData.rawData?.description || '';
+            const jobTitle = currentJobData.jobTitle || currentJobData.title || '';
+            const jobRequirements = currentJobData.requirements || '';
+            const jobResponsibilities = currentJobData.responsibilities || '';
+            const skillsRequired = currentJobData.skillsRequired || [];
+            const qualifications = currentJobData.qualifications || null;
+            
+            const prompt = `You are an expert CV/resume analyzer and career advisor. Analyze the following CV against this job posting and provide detailed, actionable suggestions with specific examples.
+
+JOB TITLE: ${jobTitle}
+JOB DESCRIPTION:
+${jobDescription}
+
+${jobRequirements ? `JOB REQUIREMENTS:\n${jobRequirements}\n` : ''}
+${jobResponsibilities ? `JOB RESPONSIBILITIES:\n${jobResponsibilities}\n` : ''}
+${skillsRequired.length > 0 ? `REQUIRED SKILLS:\n${skillsRequired.join(', ')}\n` : ''}
+${qualifications ? `QUALIFICATIONS:\n${JSON.stringify(qualifications, null, 2)}\n` : ''}
+
+CV/RESUME:
+${cvContent}
+
+Please provide a comprehensive analysis with:
+1. A match score (0-100) indicating how well the CV matches the job
+2. Key strengths that align with the job requirements
+3. Missing skills or experiences that should be added
+4. Specific, actionable suggestions with relevant examples
+5. Recommended changes to make the CV more relevant
+
+IMPORTANT: For each suggestion, provide a concrete example of how to improve it. For instance:
+- If suggesting to add a skill, show how to phrase it: "Add 'Proficient in React and Node.js' to Skills section"
+- If suggesting to modify experience, provide before/after example
+- If suggesting to add achievements, provide example bullet points with metrics
+
+Format your response as JSON with the following structure:
+{
+  "matchScore": <number 0-100>,
+  "strengths": ["strength1", "strength2", ...],
+  "missingSkills": ["skill1", "skill2", ...],
+  "suggestions": [
+    {
+      "type": "add|modify|remove",
+      "section": "experience|skills|education|summary|projects",
+      "suggestion": "detailed suggestion text explaining what to change",
+      "example": "concrete example showing how to implement the suggestion (before/after or specific phrasing)",
+      "priority": "high|medium|low",
+      "reason": "why this change improves match with job requirements"
+    }
+  ],
+  "recommendedChanges": "overall recommendation text with actionable steps",
+  "exampleImprovements": [
+    {
+      "current": "current CV text that needs improvement",
+      "improved": "improved version with example",
+      "explanation": "why this improvement helps"
+    }
+  ]
+}`;
+            
+            const requestBody = {
+                request: {
+                    model: 'gpt-5.2',
+                    messages: [
+                        { role: 'system', content: 'You are an expert CV/resume analyzer and career advisor. Always respond with valid JSON format.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    temperature: 0.7,
+                    response_format: { type: 'json_object' }
+                },
+                processType: 'cv_job_analysis',
+                processDescription: `CV analysis for job: ${jobTitle}`
+            };
+            
+            let response;
+            if (useBackendCredits) {
+                response = await fetch(`${BACKEND_URL}/api/openai-proxy`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': currentApiKey
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+            } else {
+                response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${openaiApiKey}`
+                    },
+                    body: JSON.stringify(requestBody.request)
+                });
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || 'Failed to analyze CV');
+            }
+            
+            // Clear status interval
+            if (statusInterval) {
+                clearInterval(statusInterval);
+            }
+            
+            // Mark all steps as completed
+            const stepsContainer = document.getElementById('cvAnalysisSteps');
+            if (stepsContainer) {
+                const steps = stepsContainer.querySelectorAll('.analysis-step');
+                steps.forEach((step) => {
+                    const stepIcon = step.querySelector('.step-icon');
+                    const stepText = step.querySelector('div:last-child');
+                    step.style.opacity = '1';
+                    step.style.background = 'rgba(34, 197, 94, 0.1)';
+                    stepIcon.innerHTML = '✓';
+                    stepIcon.style.border = '2px solid #22c55e';
+                    stepIcon.style.background = '#22c55e';
+                    stepIcon.style.color = 'white';
+                    stepIcon.style.fontSize = '12px';
+                    stepText.style.color = 'var(--text-primary)';
+                });
+            }
+            
+            // Update status to final processing message
+            if (cvAnalysisStatusText) {
+                cvAnalysisStatusText.textContent = 'Processing analysis results...';
+            }
+            
+            const data = await response.json();
+            const analysisText = data.response?.choices?.[0]?.message?.content || data.choices?.[0]?.message?.content || '';
+            
+            // Try to parse JSON from response
+            let analysisData = null;
+            try {
+                const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    analysisData = JSON.parse(jsonMatch[0]);
+                }
+            } catch (e) {
+                // If JSON parsing fails, use the text as-is
+                analysisData = { analysis: analysisText };
+            }
+            
+            currentCvSuggestions = analysisData;
+            
+            // Apply suggestions to structured CV and store final version (hidden, for download)
+            if (currentCvStructured || (currentCvData && currentCvData.structured)) {
+                const structuredCv = currentCvStructured || currentCvData.structured;
+                finalCvStructured = applySuggestionsToStructuredCv(structuredCv);
+                log(`[CV] ✓ Created final structured CV with AI additions (hidden object, ready for download)`);
+            } else if (currentCvData && currentCvData.content) {
+                // If no structured CV, try to create one from content
+                // This will be done on download if needed
+                log(`[CV] No structured CV available, will structure on download`);
+            }
+            
+            // Hide loading status
+            if (cvAnalysisStatus) {
+                cvAnalysisStatus.classList.add('hidden');
+            }
+            if (regenerateAnalysisBtn) {
+                regenerateAnalysisBtn.disabled = false;
+                regenerateAnalysisBtn.textContent = '🔄 Re-analyze';
+            }
+            
+            // Display match score in separate box
+            if (cvMatchScoreContainer && analysisData.matchScore !== undefined) {
+                const score = analysisData.matchScore;
+                const scoreColor = score >= 70 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
+                const scoreLabel = score >= 70 ? 'Excellent Match' : score >= 50 ? 'Good Match' : 'Needs Improvement';
+                
+                cvMatchScoreContainer.innerHTML = `
+                    <div style="padding: 16px; background: var(--card-bg); border-radius: 8px; border: 2px solid ${scoreColor}40; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 50px; height: 50px; position: relative; flex-shrink: 0;">
+                                <svg width="50" height="50" style="transform: rotate(-90deg);">
+                                    <circle cx="25" cy="25" r="20" stroke="var(--border-color)" stroke-width="4" fill="none"/>
+                                    <circle cx="25" cy="25" r="20" stroke="${scoreColor}" stroke-width="4" fill="none"
+                                        stroke-dasharray="${2 * Math.PI * 20}" 
+                                        stroke-dashoffset="${2 * Math.PI * 20 * (1 - score / 100)}"
+                                        stroke-linecap="round"/>
+                                </svg>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: bold; color: ${scoreColor};">
+                                    ${score}
+                                </div>
+                            </div>
+                            <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;">
+                                <div style="font-size: 9px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Match Score</div>
+                                <div style="font-size: 22px; font-weight: bold; color: ${scoreColor}; line-height: 1.1;">
+                                    ${score}%
+                                </div>
+                                <div style="font-size: 9px; color: var(--text-secondary);">${scoreLabel}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                cvMatchScoreContainer.style.display = 'block';
+            }
+            
+            // Display analysis results (strengths, missing skills, recommendations)
+            if (cvAnalysisResults) {
+                if (analysisData.matchScore !== undefined) {
+                    const score = analysisData.matchScore;
+                    const scoreColor = score >= 70 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
+                    
+                    cvAnalysisResults.innerHTML = `
+                        ${analysisData.strengths ? `
+                            <div style="margin-bottom: 16px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22c55e; border-radius: 4px;">
+                                <strong style="color: #22c55e; display: block; margin-bottom: 8px;">✓ Strengths:</strong>
+                                <ul style="margin: 0; padding-left: 20px;">
+                                    ${analysisData.strengths.map(s => `<li style="margin-bottom: 4px;">${s}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        ${analysisData.missingSkills ? `
+                            <div style="margin-bottom: 16px; padding: 12px; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 4px;">
+                                <strong style="color: #ef4444; display: block; margin-bottom: 8px;">⚠ Missing Skills:</strong>
+                                <ul style="margin: 0; padding-left: 20px;">
+                                    ${analysisData.missingSkills.map(s => `<li style="margin-bottom: 4px;">${s}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        ${analysisData.recommendedChanges ? `
+                            <div style="padding: 12px; background: rgba(10, 102, 194, 0.1); border-left: 3px solid var(--accent-color); border-radius: 4px;">
+                                <strong style="color: var(--accent-color); display: block; margin-bottom: 8px;">💡 Recommendations:</strong>
+                                <p style="margin: 0; line-height: 1.6;">${analysisData.recommendedChanges}</p>
+                            </div>
+                        ` : ''}
+                    `;
+                } else {
+                    cvAnalysisResults.textContent = analysisText;
+                }
+            }
+            
+            // Display detailed suggestions with examples
+            if (detailedSuggestionsList && analysisData.suggestions) {
+                detailedSuggestionsList.innerHTML = analysisData.suggestions.map(s => `
+                    <div class="cv-suggestion-item">
+                        <strong>${s.type.toUpperCase()} - ${s.section} (${s.priority} priority)</strong>
+                        <p style="margin: 8px 0;">${s.suggestion}</p>
+                        ${s.example ? `
+                            <div style="background: var(--input-bg); padding: 12px; border-radius: 6px; margin-top: 8px; border-left: 3px solid var(--accent-color);">
+                                <strong style="font-size: 11px; color: var(--accent-color); display: block; margin-bottom: 6px;">Example:</strong>
+                                <div style="font-size: 11px; font-family: monospace; white-space: pre-wrap; color: var(--text-secondary);">${s.example}</div>
+                            </div>
+                        ` : ''}
+                        ${s.reason ? `<small style="display: block; margin-top: 8px; color: var(--text-secondary); font-size: 11px;"><em>Why: ${s.reason}</em></small>` : ''}
+                    </div>
+                `).join('');
+                
+                // Display example improvements if available
+                if (analysisData.exampleImprovements && analysisData.exampleImprovements.length > 0) {
+                    const improvementsHtml = `
+                        <details class="details-accordion" style="margin-top: 16px;">
+                            <summary class="accordion-summary" style="cursor: pointer; padding: 8px; background: var(--input-bg); border-radius: 4px;">📝 View Example Improvements</summary>
+                            <div style="margin-top: 12px;">
+                                ${analysisData.exampleImprovements.map(imp => `
+                                    <div style="margin-bottom: 16px; padding: 12px; background: var(--input-bg); border-radius: 6px;">
+                                        <div style="margin-bottom: 8px;">
+                                            <strong style="font-size: 11px; color: #ef4444;">Current:</strong>
+                                            <div style="font-size: 11px; font-family: monospace; white-space: pre-wrap; color: var(--text-secondary); margin-top: 4px; padding: 8px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">${imp.current}</div>
+                                        </div>
+                                        <div style="margin-bottom: 8px;">
+                                            <strong style="font-size: 11px; color: #22c55e;">Improved:</strong>
+                                            <div style="font-size: 11px; font-family: monospace; white-space: pre-wrap; color: var(--text-secondary); margin-top: 4px; padding: 8px; background: rgba(34, 197, 94, 0.1); border-radius: 4px;">${imp.improved}</div>
+                                        </div>
+                                        ${imp.explanation ? `<small style="display: block; color: var(--text-secondary); font-size: 11px; margin-top: 8px;"><em>${imp.explanation}</em></small>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </details>
+                    `;
+                    detailedSuggestionsList.insertAdjacentHTML('beforeend', improvementsHtml);
+                }
+            }
+            
+            // Update match score in sidebar with improved UI
+            if (cvMatchScore && analysisData.matchScore !== undefined) {
+                const score = analysisData.matchScore;
+                const scoreClass = score >= 70 ? 'high' : score >= 50 ? 'medium' : 'low';
+                const scoreColor = score >= 70 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
+                cvMatchScore.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 40px; height: 40px; position: relative;">
+                            <svg width="40" height="40" style="transform: rotate(-90deg);">
+                                <circle cx="20" cy="20" r="16" stroke="var(--border-color)" stroke-width="3" fill="none"/>
+                                <circle cx="20" cy="20" r="16" stroke="${scoreColor}" stroke-width="3" fill="none"
+                                    stroke-dasharray="${2 * Math.PI * 16}" 
+                                    stroke-dashoffset="${2 * Math.PI * 16 * (1 - score / 100)}"
+                                    stroke-linecap="round"/>
+                            </svg>
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: bold; color: ${scoreColor};">
+                                ${score}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 18px; font-weight: bold; color: ${scoreColor};">${score}%</div>
+                            <div style="font-size: 10px; color: var(--text-secondary);">
+                                ${score >= 70 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Work'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Show CV analysis content
+            if (cvEditorEmptyState) cvEditorEmptyState.classList.add('hidden');
+            if (cvEditorContent) cvEditorContent.classList.remove('hidden');
+            
+            log('[CV] ✓ CV analysis complete');
+            
+        } catch (error) {
+            // Clear status interval if it exists
+            if (typeof statusInterval !== 'undefined' && statusInterval) {
+                clearInterval(statusInterval);
+            }
+            
+            // Hide loading status on error
+            if (cvAnalysisStatus) {
+                cvAnalysisStatus.classList.add('hidden');
+            }
+            if (regenerateAnalysisBtn) {
+                regenerateAnalysisBtn.disabled = false;
+                regenerateAnalysisBtn.textContent = '🔄 Re-analyze';
+            }
+            
+            log(`[CV] ✗ Error: ${error.message}`);
+            if (cvAnalysisResults) {
+                cvAnalysisResults.innerHTML = `<div style="color: #ef4444; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">❌ Error: ${error.message}</div>`;
+            }
+            alert('Error analyzing CV: ' + error.message);
+        }
+    }
+    
+    // Helper function to extract job requirements
+    function extractJobRequirements(description) {
+        const requirementKeywords = ['required', 'must have', 'should have', 'qualifications', 'requirements', 'skills'];
+        const lines = description.split('\n');
+        const requirements = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].toLowerCase();
+            if (requirementKeywords.some(keyword => line.includes(keyword))) {
+                for (let j = i; j < Math.min(i + 5, lines.length); j++) {
+                    if (lines[j].trim()) {
+                        requirements.push(lines[j].trim());
+                    }
+                }
+                break;
+            }
+        }
+        
+        return requirements.join('\n');
+    }
+    
+    // Note: File reading is now handled by backend API
+    // This function is kept for backward compatibility but is no longer used
+    async function readFileContent(file) {
+        throw new Error('File processing is now handled by the backend. Please use the file upload feature.');
+    }
+    
+    // Update CV word count
+    function updateCvWordCount() {
+        if (cvEditorTextarea && cvWordCount) {
+            const text = getCvText();
+            const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+            cvWordCount.textContent = words.length;
+        }
+    }
+    
+    // Helper function to get plain text from contenteditable div (preserves all content)
+    function getCvText() {
+        if (!cvEditorTextarea) return '';
+        
+        // Clone the element to avoid modifying the original
+        const clone = cvEditorTextarea.cloneNode(true);
+        
+        // Remove highlight spans but keep their text content
+        const highlightedElements = clone.querySelectorAll('.ai-edit-highlight');
+        highlightedElements.forEach(el => {
+            const textNode = document.createTextNode(el.textContent);
+            el.parentNode.replaceChild(textNode, el);
+        });
+        
+        // Get text content preserving line breaks
+        // Use textContent which preserves whitespace better than innerText
+        let text = clone.textContent || clone.innerText || '';
+        
+        // Preserve line breaks by converting <br> and <div> to newlines
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = clone.innerHTML
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/div>/gi, '\n')
+            .replace(/<div[^>]*>/gi, '');
+        text = tempDiv.textContent || tempDiv.innerText || text;
+        
+        // Clean up multiple consecutive newlines but preserve structure
+        text = text.replace(/\n{4,}/g, '\n\n\n');
+        
+        return text;
+    }
+    
+    // Helper function to set CV text with highlighting
+    function setCvTextWithHighlights(text, highlights = []) {
+        if (!cvEditorTextarea) return;
+        
+        // Clear existing content
+        cvEditorTextarea.innerHTML = '';
+        
+        if (!text) return;
+        
+        // If no highlights, just set plain text
+        if (!highlights || highlights.length === 0) {
+            cvEditorTextarea.textContent = text;
+            return;
+        }
+        
+        // Split text and apply highlights
+        let lastIndex = 0;
+        const parts = [];
+        
+        // Sort highlights by start position
+        const sortedHighlights = highlights.sort((a, b) => a.start - b.start);
+        
+        sortedHighlights.forEach(highlight => {
+            // Add text before highlight
+            if (highlight.start > lastIndex) {
+                const beforeText = text.substring(lastIndex, highlight.start);
+                if (beforeText) {
+                    parts.push({ text: beforeText, isHighlight: false });
+                }
+            }
+            
+            // Add highlighted text
+            const highlightText = text.substring(highlight.start, highlight.end);
+            if (highlightText) {
+                parts.push({ text: highlightText, isHighlight: true });
+            }
+            
+            lastIndex = highlight.end;
+        });
+        
+        // Add remaining text
+        if (lastIndex < text.length) {
+            const remainingText = text.substring(lastIndex);
+            if (remainingText) {
+                parts.push({ text: remainingText, isHighlight: false });
+            }
+        }
+        
+        // Build HTML with highlights
+        parts.forEach(part => {
+            if (part.isHighlight) {
+                const span = document.createElement('span');
+                span.className = 'ai-edit-highlight';
+                span.textContent = part.text;
+                cvEditorTextarea.appendChild(span);
+            } else {
+                const textNode = document.createTextNode(part.text);
+                cvEditorTextarea.appendChild(textNode);
+            }
+        });
+    }
+    
+    // Helper function to remove all highlights and get plain text (preserves all content)
+    function removeHighlights() {
+        if (!cvEditorTextarea) return '';
+        
+        // Clone to avoid modifying original
+        const clone = cvEditorTextarea.cloneNode(true);
+        
+        // Remove highlight spans but keep their text content
+        const highlightedElements = clone.querySelectorAll('.ai-edit-highlight');
+        highlightedElements.forEach(el => {
+            const textNode = document.createTextNode(el.textContent);
+            el.parentNode.replaceChild(textNode, el);
+        });
+        
+        // Get text content preserving structure
+        let text = clone.textContent || clone.innerText || '';
+        
+        // Preserve line breaks
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = clone.innerHTML
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/div>/gi, '\n')
+            .replace(/<div[^>]*>/gi, '')
+            .replace(/<\/p>/gi, '\n')
+            .replace(/<p[^>]*>/gi, '');
+        text = tempDiv.textContent || tempDiv.innerText || text;
+        
+        // Clean up excessive newlines but preserve structure
+        text = text.replace(/\n{4,}/g, '\n\n\n');
+        
+        return text;
+    }
+    
+    // Helper function to display CV in modular, readable format
+    function displayCvModular() {
+        if (!cvModularDisplay) return;
+        
+        // Use structured CV if available, otherwise use raw content
+        const structuredCv = currentCvStructured || (currentCvData && currentCvData.structured);
+        const rawContent = currentCvData && currentCvData.content;
+        
+        if (structuredCv) {
+            // Display structured CV in modular format
+            let html = '';
+            
+            // Personal Info Section
+            if (structuredCv.personalInfo) {
+                const info = structuredCv.personalInfo;
+                html += `
+                    <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                        <h4 style="font-size: 12px; font-weight: 600; color: var(--accent-color); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Contact Information</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 11px;">
+                            ${info.name ? `<div><strong>Name:</strong> ${info.name}</div>` : ''}
+                            ${info.email ? `<div><strong>Email:</strong> ${info.email}</div>` : ''}
+                            ${info.phone ? `<div><strong>Phone:</strong> ${info.phone}</div>` : ''}
+                            ${info.location ? `<div><strong>Location:</strong> ${info.location}</div>` : ''}
+                            ${info.linkedin ? `<div><strong>LinkedIn:</strong> <a href="${info.linkedin}" target="_blank" style="color: var(--accent-color);">View Profile</a></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Summary Section
+            if (structuredCv.summary) {
+                html += `
+                    <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                        <h4 style="font-size: 12px; font-weight: 600; color: var(--accent-color); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Professional Summary</h4>
+                        <p style="font-size: 11px; line-height: 1.6; color: var(--text-primary);">${structuredCv.summary}</p>
+                    </div>
+                `;
+            }
+            
+            // Experience Section
+            if (structuredCv.experience && structuredCv.experience.length > 0) {
+                html += `
+                    <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                        <h4 style="font-size: 12px; font-weight: 600; color: var(--accent-color); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Professional Experience</h4>
+                        ${structuredCv.experience.map(exp => `
+                            <div style="margin-bottom: 12px; padding: 10px; background: var(--input-bg); border-radius: 6px;">
+                                <div style="font-weight: 600; font-size: 11px; color: var(--text-primary); margin-bottom: 4px;">
+                                    ${exp.title || ''}${exp.company ? ' at ' + exp.company : ''}
+                                </div>
+                                <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 6px;">
+                                    ${exp.location || ''}${exp.startDate || exp.endDate ? ' • ' + (exp.startDate || '') + ' - ' + (exp.endDate || 'Present') : ''}
+                                </div>
+                                ${exp.description ? `<p style="font-size: 10px; line-height: 1.5; color: var(--text-primary); margin-bottom: 6px;">${exp.description}</p>` : ''}
+                                ${exp.achievements && exp.achievements.length > 0 ? `
+                                    <ul style="margin: 0; padding-left: 18px; font-size: 10px; line-height: 1.5;">
+                                        ${exp.achievements.map(ach => `<li style="margin-bottom: 3px;">${ach}</li>`).join('')}
+                                    </ul>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Education Section
+            if (structuredCv.education && structuredCv.education.length > 0) {
+                html += `
+                    <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                        <h4 style="font-size: 12px; font-weight: 600; color: var(--accent-color); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Education</h4>
+                        ${structuredCv.education.map(edu => `
+                            <div style="margin-bottom: 8px; padding: 8px; background: var(--input-bg); border-radius: 6px;">
+                                <div style="font-weight: 600; font-size: 11px; color: var(--text-primary);">
+                                    ${edu.degree || ''}${edu.school ? ' • ' + edu.school : ''}
+                                </div>
+                                <div style="font-size: 10px; color: var(--text-secondary);">
+                                    ${edu.location || ''}${edu.graduationDate ? ' • ' + edu.graduationDate : ''}
+                                    ${edu.gpa ? ' • GPA: ' + edu.gpa : ''}
+                                </div>
+                                ${edu.honors ? `<div style="font-size: 10px; color: var(--accent-color); margin-top: 4px;">${edu.honors}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Skills Section
+            if (structuredCv.skills) {
+                html += `
+                    <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                        <h4 style="font-size: 12px; font-weight: 600; color: var(--accent-color); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Skills</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            ${structuredCv.skills.technical && structuredCv.skills.technical.length > 0 ? `
+                                <div style="flex: 1; min-width: 150px;">
+                                    <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 4px;">Technical:</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                        ${structuredCv.skills.technical.map(skill => `
+                                            <span style="display: inline-block; padding: 4px 8px; background: var(--accent-color); color: white; border-radius: 4px; font-size: 10px;">${skill}</span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            ${structuredCv.skills.soft && structuredCv.skills.soft.length > 0 ? `
+                                <div style="flex: 1; min-width: 150px;">
+                                    <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 4px;">Soft Skills:</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                        ${structuredCv.skills.soft.map(skill => `
+                                            <span style="display: inline-block; padding: 4px 8px; background: var(--input-bg); color: var(--text-primary); border-radius: 4px; font-size: 10px;">${skill}</span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            ${structuredCv.skills.languages && structuredCv.skills.languages.length > 0 ? `
+                                <div style="flex: 1; min-width: 150px;">
+                                    <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 4px;">Languages:</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                        ${structuredCv.skills.languages.map(lang => `
+                                            <span style="display: inline-block; padding: 4px 8px; background: var(--input-bg); color: var(--text-primary); border-radius: 4px; font-size: 10px;">${lang}</span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Projects Section
+            if (structuredCv.projects && structuredCv.projects.length > 0) {
+                html += `
+                    <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                        <h4 style="font-size: 12px; font-weight: 600; color: var(--accent-color); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Projects</h4>
+                        ${structuredCv.projects.map(proj => `
+                            <div style="margin-bottom: 8px; padding: 8px; background: var(--input-bg); border-radius: 6px;">
+                                <div style="font-weight: 600; font-size: 11px; color: var(--text-primary); margin-bottom: 4px;">
+                                    ${proj.name || ''}${proj.technologies && proj.technologies.length > 0 ? ' • ' + proj.technologies.join(', ') : ''}
+                                </div>
+                                ${proj.description ? `<p style="font-size: 10px; line-height: 1.5; color: var(--text-primary);">${proj.description}</p>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Certifications Section
+            if (structuredCv.certifications && structuredCv.certifications.length > 0) {
+                html += `
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="font-size: 12px; font-weight: 600; color: var(--accent-color); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Certifications</h4>
+                        ${structuredCv.certifications.map(cert => `
+                            <div style="margin-bottom: 6px; font-size: 10px; color: var(--text-primary);">
+                                <strong>${cert.name || ''}</strong>${cert.issuer ? ' • ' + cert.issuer : ''}${cert.date ? ' • ' + cert.date : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            cvModularDisplay.innerHTML = html || '<p style="font-size: 11px; color: var(--text-secondary);">No CV content available</p>';
+        } else if (rawContent) {
+            // Fallback: Display raw content in a readable format
+            const lines = rawContent.split('\n');
+            let html = '<div style="font-size: 11px; line-height: 1.6; color: var(--text-primary);">';
+            
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    html += '<br>';
+                } else if (trimmed === trimmed.toUpperCase() && trimmed.length < 50 && trimmed.length > 2) {
+                    // Section header
+                    html += `<h4 style="font-size: 12px; font-weight: 600; color: var(--accent-color); margin: 16px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">${trimmed}</h4>`;
+                } else {
+                    html += `<p style="margin: 4px 0;">${line}</p>`;
+                }
+            });
+            
+            html += '</div>';
+            cvModularDisplay.innerHTML = html;
+        } else {
+            cvModularDisplay.innerHTML = '<p style="font-size: 11px; color: var(--text-secondary);">No CV content available</p>';
+        }
+    }
+    
+    // Helper function to apply suggestions to structured CV JSON object
+    function applySuggestionsToStructuredCv(structuredCv) {
+        if (!currentCvSuggestions || !currentCvSuggestions.suggestions || !structuredCv) {
+            return structuredCv;
+        }
+        
+        // Clone the structured CV to avoid mutating original
+        const enhancedCv = JSON.parse(JSON.stringify(structuredCv));
+        
+        // Apply high-priority suggestions to structured CV
+        currentCvSuggestions.suggestions
+            .filter(s => s.priority === 'high')
+            .forEach(suggestion => {
+                if (suggestion.type === 'add' && suggestion.section) {
+                    const section = suggestion.section.toLowerCase();
+                    
+                    // Get suggestion text safely
+                    const suggestionText = typeof suggestion.suggestion === 'string' 
+                        ? suggestion.suggestion 
+                        : (typeof suggestion.example === 'string' 
+                            ? suggestion.example 
+                            : (suggestion.example?.improved || suggestion.example?.text || String(suggestion.example || suggestion.suggestion || '')));
+                    
+                    // Apply to appropriate section
+                    if (section === 'skills' && enhancedCv.skills) {
+                        if (!enhancedCv.skills.technical) enhancedCv.skills.technical = [];
+                        // Extract skill names from suggestion text
+                        const skillMatch = suggestionText.match(/(?:add|include|mention)\s+['"]?([^'"]+)['"]?/i);
+                        if (skillMatch && skillMatch[1]) {
+                            const skills = skillMatch[1].split(/[,\s]+and\s+/i).map(s => s.trim()).filter(s => s);
+                            skills.forEach(skill => {
+                                if (!enhancedCv.skills.technical.includes(skill)) {
+                                    enhancedCv.skills.technical.push(skill);
+                                }
+                            });
+                        }
+                    } else if (section === 'experience' && enhancedCv.experience && enhancedCv.experience.length > 0) {
+                        // Add to most recent experience
+                        const latestExp = enhancedCv.experience[0];
+                        if (!latestExp.achievements) latestExp.achievements = [];
+                        if (suggestionText.trim().length > 0) {
+                            latestExp.achievements.push(suggestionText.trim());
+                        }
+                    } else if (section === 'summary' && enhancedCv.summary) {
+                        // Append to summary
+                        enhancedCv.summary += ' ' + suggestionText.trim();
+                    } else if (section === 'projects' && enhancedCv.projects) {
+                        // Add new project if suggested
+                        if (suggestionText.trim().length > 0) {
+                            if (!enhancedCv.projects) enhancedCv.projects = [];
+                            enhancedCv.projects.push({
+                                name: 'Suggested Project',
+                                description: suggestionText.trim(),
+                                technologies: []
+                            });
+                        }
+                    }
+                } else if (suggestion.type === 'modify' && suggestion.section) {
+                    // For modify suggestions, update existing content
+                    const section = suggestion.section.toLowerCase();
+                    const exampleText = typeof suggestion.example === 'string' 
+                        ? suggestion.example 
+                        : (suggestion.example?.improved || suggestion.example?.text || String(suggestion.example || ''));
+                    
+                    if (exampleText && exampleText.includes('Improved:')) {
+                        const improvedMatch = exampleText.match(/Improved:\s*(.+)/);
+                        if (improvedMatch && improvedMatch[1]) {
+                            if (section === 'summary' && enhancedCv.summary) {
+                                enhancedCv.summary = improvedMatch[1].trim();
+                            } else if (section === 'experience' && enhancedCv.experience && enhancedCv.experience.length > 0) {
+                                // Update most recent experience description
+                                enhancedCv.experience[0].description = improvedMatch[1].trim();
+                            }
+                        }
+                    }
+                }
+            });
+        
+        return enhancedCv;
+    }
+    
+    // Helper function to convert structured CV back to text
+    function structuredCvToText(structuredCv) {
+        if (!structuredCv) return '';
+        
+        let text = '';
+        
+        // Personal Info
+        if (structuredCv.personalInfo) {
+            const info = structuredCv.personalInfo;
+            if (info.name) text += info.name + '\n';
+            const contact = [];
+            if (info.email) contact.push(info.email);
+            if (info.phone) contact.push(info.phone);
+            if (info.location) contact.push(info.location);
+            if (info.linkedin) contact.push(info.linkedin);
+            if (contact.length > 0) text += contact.join(' | ') + '\n\n';
+        }
+        
+        // Summary
+        if (structuredCv.summary) {
+            text += 'PROFESSIONAL SUMMARY\n' + structuredCv.summary + '\n\n';
+        }
+        
+        // Experience
+        if (structuredCv.experience && structuredCv.experience.length > 0) {
+            text += 'PROFESSIONAL EXPERIENCE\n';
+            structuredCv.experience.forEach(exp => {
+                text += `${exp.title || ''}${exp.company ? ' | ' + exp.company : ''}${exp.location ? ' | ' + exp.location : ''}${exp.startDate || exp.endDate ? ' | ' + (exp.startDate || '') + ' - ' + (exp.endDate || 'Present') : ''}\n`;
+                if (exp.description) text += exp.description + '\n';
+                if (exp.achievements && exp.achievements.length > 0) {
+                    exp.achievements.forEach(ach => {
+                        text += '• ' + ach + '\n';
+                    });
+                }
+                text += '\n';
+            });
+        }
+        
+        // Education
+        if (structuredCv.education && structuredCv.education.length > 0) {
+            text += 'EDUCATION\n';
+            structuredCv.education.forEach(edu => {
+                text += `${edu.degree || ''}${edu.school ? ' | ' + edu.school : ''}${edu.location ? ' | ' + edu.location : ''}${edu.graduationDate ? ' | ' + edu.graduationDate : ''}\n`;
+                if (edu.gpa || edu.honors) {
+                    const details = [];
+                    if (edu.gpa) details.push('GPA: ' + edu.gpa);
+                    if (edu.honors) details.push(edu.honors);
+                    text += details.join(' | ') + '\n';
+                }
+                text += '\n';
+            });
+        }
+        
+        // Skills
+        if (structuredCv.skills) {
+            text += 'SKILLS\n';
+            const skillParts = [];
+            if (structuredCv.skills.technical && structuredCv.skills.technical.length > 0) {
+                skillParts.push('Technical: ' + structuredCv.skills.technical.join(', '));
+            }
+            if (structuredCv.skills.soft && structuredCv.skills.soft.length > 0) {
+                skillParts.push('Soft Skills: ' + structuredCv.skills.soft.join(', '));
+            }
+            if (structuredCv.skills.languages && structuredCv.skills.languages.length > 0) {
+                skillParts.push('Languages: ' + structuredCv.skills.languages.join(', '));
+            }
+            text += skillParts.join('\n') + '\n\n';
+        }
+        
+        // Projects
+        if (structuredCv.projects && structuredCv.projects.length > 0) {
+            text += 'PROJECTS\n';
+            structuredCv.projects.forEach(proj => {
+                text += `${proj.name || ''}${proj.technologies && proj.technologies.length > 0 ? ' | ' + proj.technologies.join(', ') : ''}\n`;
+                if (proj.description) text += proj.description + '\n';
+                text += '\n';
+            });
+        }
+        
+        // Certifications
+        if (structuredCv.certifications && structuredCv.certifications.length > 0) {
+            text += 'CERTIFICATIONS\n';
+            structuredCv.certifications.forEach(cert => {
+                text += `${cert.name || ''}${cert.issuer ? ' | ' + cert.issuer : ''}${cert.date ? ' | ' + cert.date : ''}\n`;
+            });
+            text += '\n';
+        }
+        
+        return text.trim();
+    }
+    
+    // Helper function to apply suggestions to CV content (uses structured CV if available)
+    function applySuggestionsToCv(cvText) {
+        if (!currentCvSuggestions || !currentCvSuggestions.suggestions) {
+            return { cvText: cvText, aiEdits: [] };
+        }
+        
+        // If we have a structured CV, apply suggestions to it first
+        if (currentCvStructured || (currentCvData && currentCvData.structured)) {
+            const structuredCv = currentCvStructured || currentCvData.structured;
+            const enhancedStructured = applySuggestionsToStructuredCv(structuredCv);
+            
+            // Convert back to text
+            const enhancedCvText = structuredCvToText(enhancedStructured);
+            
+            // Calculate AI edits (everything that was added)
+            const aiEdits = [];
+            const originalText = structuredCvToText(structuredCv);
+            const addedLength = enhancedCvText.length - originalText.length;
+            
+            if (addedLength > 0) {
+                aiEdits.push({
+                    start: originalText.length,
+                    end: enhancedCvText.length,
+                    type: 'add',
+                    content: enhancedCvText.substring(originalText.length)
+                });
+            }
+            
+            // Update stored structured CV
+            currentCvStructured = enhancedStructured;
+            if (currentCvData) {
+                currentCvData.structured = enhancedStructured;
+            }
+            
+            return { cvText: enhancedCvText, aiEdits: aiEdits };
+        }
+        
+        // Fallback to text-based approach if no structured CV
+        let enhancedCvText = cvText;
+        const aiEdits = [];
+        
+        // Apply high-priority suggestions
+        currentCvSuggestions.suggestions
+            .filter(s => s.priority === 'high')
+            .forEach(suggestion => {
+                if (suggestion.type === 'add' && suggestion.section) {
+                    // Check if this section already exists in CV
+                    const sectionHeader = `[${suggestion.section.toUpperCase()}]`;
+                    const sectionRegex = new RegExp(`\\[${suggestion.section.toUpperCase()}\\]`, 'i');
+                    
+                    // Get suggestion text safely (handle different data types)
+                    const suggestionText = typeof suggestion.suggestion === 'string' 
+                        ? suggestion.suggestion 
+                        : (typeof suggestion.example === 'string' 
+                            ? suggestion.example 
+                            : (suggestion.example?.improved || suggestion.example?.text || String(suggestion.example || suggestion.suggestion || '')));
+                    
+                    if (!sectionRegex.test(enhancedCvText)) {
+                        // Section doesn't exist, add it
+                        const addition = `\n\n${sectionHeader}\n${suggestionText}`;
+                        const startPos = enhancedCvText.length;
+                        enhancedCvText += addition;
+                        const endPos = enhancedCvText.length;
+                        
+                        aiEdits.push({
+                            start: startPos,
+                            end: endPos,
+                            type: 'add',
+                            section: suggestion.section,
+                            content: addition
+                        });
+                    } else {
+                        // Section exists, add content to it
+                        const sectionMatch = enhancedCvText.match(new RegExp(`(${sectionHeader}[^\\[]*)`, 'i'));
+                        if (sectionMatch && suggestionText.trim().length > 0) {
+                            const insertPos = sectionMatch.index + sectionMatch[0].length;
+                            const addition = `\n${suggestionText}`;
+                            enhancedCvText = enhancedCvText.slice(0, insertPos) + addition + enhancedCvText.slice(insertPos);
+                            
+                            aiEdits.push({
+                                start: insertPos,
+                                end: insertPos + addition.length,
+                                type: 'add',
+                                section: suggestion.section,
+                                content: addition
+                            });
+                        }
+                    }
+                } else if (suggestion.type === 'modify') {
+                    // For modify suggestions, extract the improved version
+                    // Ensure example is a string - handle all possible types
+                    let exampleText = '';
+                    if (suggestion.example) {
+                        if (typeof suggestion.example === 'string') {
+                            exampleText = suggestion.example;
+                        } else if (typeof suggestion.example === 'object') {
+                            // Handle object with improved/text properties
+                            exampleText = suggestion.example.improved || suggestion.example.text || suggestion.example.content || '';
+                            // If still not a string, convert to string
+                            if (typeof exampleText !== 'string') {
+                                exampleText = String(exampleText || '');
+                            }
+                        } else {
+                            // Convert to string for any other type
+                            exampleText = String(suggestion.example || '');
+                        }
+                    }
+                    
+                    // Only proceed if we have a valid string
+                    if (exampleText && typeof exampleText === 'string' && exampleText.trim().length > 0) {
+                        // Check if it contains "Improved:" marker
+                        if (typeof exampleText.includes === 'function' && exampleText.includes('Improved:')) {
+                            const improvedMatch = exampleText.match(/Improved:\s*(.+)/);
+                            if (improvedMatch && improvedMatch[1]) {
+                                const addition = `\n\n[SUGGESTED IMPROVEMENT]\n${improvedMatch[1].trim()}`;
+                                const startPos = enhancedCvText.length;
+                                enhancedCvText += addition;
+                                const endPos = enhancedCvText.length;
+                                
+                                aiEdits.push({
+                                    start: startPos,
+                                    end: endPos,
+                                    type: 'modify',
+                                    section: suggestion.section,
+                                    content: addition
+                                });
+                            }
+                        } else {
+                            // If example doesn't have "Improved:" prefix, use it directly
+                            const addition = `\n\n[SUGGESTED IMPROVEMENT]\n${exampleText.trim()}`;
+                            const startPos = enhancedCvText.length;
+                            enhancedCvText += addition;
+                            const endPos = enhancedCvText.length;
+                            
+                            aiEdits.push({
+                                start: startPos,
+                                end: endPos,
+                                type: 'modify',
+                                section: suggestion.section,
+                                content: addition
+                            });
+                        }
+                    }
+                }
+            });
+        
+        return { cvText: enhancedCvText, aiEdits: aiEdits };
+    }
+    
+    // Download CV Button - COMMENTED OUT FOR NOW
+    /*
+    if (downloadCvBtn) {
+        downloadCvBtn.addEventListener('click', async () => {
+            // Check if we have CV data (structured or raw)
+            if (!currentCvData && !finalCvStructured && !currentCvStructured) {
+                alert('No CV content to download. Please upload a CV or use LinkedIn profile first.');
+                return;
+            }
+            
+            try {
+                const format = cvDownloadFormat ? cvDownloadFormat.value : 'pdf';
+                const jobTitle = currentJobData?.jobTitle || currentJobData?.title || 'job';
+                
+                // Disable button during generation
+                downloadCvBtn.disabled = true;
+                downloadCvBtn.textContent = 'Generating...';
+                
+                const currentApiKey = await getApiKey();
+                
+                // Use final structured CV if available (has AI additions), otherwise use current structured CV
+                let structuredCvToUse = finalCvStructured || currentCvStructured || (currentCvData && currentCvData.structured);
+                
+                // Calculate AI edits for highlighting (compare original vs final)
+                let aiEdits = [];
+                if (finalCvStructured && currentCvStructured) {
+                    // Compare original structured CV with final to find additions
+                    const originalText = structuredCvToText(currentCvStructured);
+                    const finalText = structuredCvToText(finalCvStructured);
+                    const addedLength = finalText.length - originalText.length;
+                    
+                    if (addedLength > 0) {
+                        aiEdits.push({
+                            start: originalText.length,
+                            end: finalText.length,
+                            type: 'add',
+                            content: finalText.substring(originalText.length)
+                        });
+                    }
+                }
+                
+                // Prepare request body
+                const requestBody = {
+                    format: format,
+                    jobTitle: jobTitle,
+                    aiEdits: aiEdits
+                };
+                
+                // If we have structured CV, send it; otherwise send raw content
+                if (structuredCvToUse) {
+                    requestBody.structuredCv = structuredCvToUse;
+                    requestBody.useStructuredCv = true;
+                    log(`[CV] Using structured CV with ${Object.keys(structuredCvToUse).length} sections`);
+                } else if (currentCvData && currentCvData.content) {
+                    requestBody.cvContent = currentCvData.content;
+                    requestBody.useStructuredCv = false;
+                    log(`[CV] Using raw CV content (${currentCvData.content.length} chars)`);
+                } else {
+                    throw new Error('No CV data available for download');
+                }
+                
+                const response = await fetch(`${BACKEND_URL}/api/generate-cv-file`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': currentApiKey
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate CV file');
+                }
+                
+                // Get file blob
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                // Create download link
+                const a = document.createElement('a');
+                a.href = url;
+                const fileName = `optimized_cv_${jobTitle.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.${format}`;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                log(`[CV] ✓ CV downloaded as ${format.toUpperCase()}`);
+                
+            } catch (error) {
+                log(`[CV] ✗ Error: ${error.message}`);
+                alert('Failed to generate CV file: ' + error.message);
+            } finally {
+                // Re-enable button
+                downloadCvBtn.disabled = false;
+                downloadCvBtn.textContent = '📥 Download CV';
+            }
+        });
+    }
+    */
+    
+    // Regenerate Analysis Button
+    if (regenerateAnalysisBtn) {
+        regenerateAnalysisBtn.addEventListener('click', () => {
+            analyzeCvAgainstJob();
+        });
+    }
+    
+    // CV Editor removed - CV is now displayed in modular format only
+    
+    // Load job applications library
+    async function loadJobApplicationsLibrary() {
+        try {
+            const currentApiKey = await getApiKey();
+            const response = await fetch(`${BACKEND_URL}/api/job-analyses`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': currentApiKey
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to load job analyses');
+            }
+            
+            const data = await response.json();
+            
+            if (jobApplicationsLibrary) {
+                if (data.analyses && data.analyses.length > 0) {
+                    jobApplicationsLibrary.innerHTML = data.analyses.map(job => `
+                        <div class="content-analysis-card" style="margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                <div>
+                                    <h4 style="margin: 0 0 4px 0; color: var(--text-primary);">${job.job_title || 'Untitled Job'}</h4>
+                                    <p style="margin: 0; color: var(--text-secondary); font-size: 12px;">${job.company_name || 'Unknown Company'} • ${job.location || 'Unknown Location'}</p>
+                                </div>
+                                <small style="color: var(--text-secondary);">${new Date(job.created_at).toLocaleDateString()}</small>
+                            </div>
+                            ${job.skills_required && job.skills_required.length > 0 ? `
+                                <div style="margin-top: 8px;">
+                                    <strong style="font-size: 11px; color: var(--text-secondary);">Skills:</strong>
+                                    <div style="margin-top: 4px;">
+                                        ${job.skills_required.slice(0, 5).map(skill => `<span class="topic-tag">${skill}</span>`).join('')}
+                                        ${job.skills_required.length > 5 ? `<span class="topic-tag">+${job.skills_required.length - 5} more</span>` : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            <div style="margin-top: 8px;">
+                                <a href="${job.job_url}" target="_blank" style="color: var(--accent-color); font-size: 12px; text-decoration: none;">View Job →</a>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    jobApplicationsLibrary.innerHTML = '<p class="empty-state">No saved job analyses yet. Analyze a job to get started.</p>';
+                }
+            }
+        } catch (error) {
+            log(`[JobLibrary] ✗ Error: ${error.message}`);
+            if (jobApplicationsLibrary) {
+                jobApplicationsLibrary.innerHTML = '<p class="empty-state">Error loading job analyses. Please try again.</p>';
+            }
+        }
+    }
+    
+    // Auto-load LinkedIn profile as CV if available
+    async function loadLinkedInProfileAsCv() {
+        try {
+            // Check for sender_profile_cache (the key used when capturing profile)
+            const stored = await chrome.storage.local.get(['sender_profile_cache', 'sender_profile_structured']);
+            
+            // Use sender_profile_cache if available (raw profile text)
+            if (stored.sender_profile_cache && stored.sender_profile_cache.trim().length > 0) {
+                currentCvData = {
+                    source: 'linkedin',
+                    content: stored.sender_profile_cache,
+                    structured: stored.sender_profile_structured || null
+                };
+                log('[CV] ✓ LinkedIn profile loaded as CV (' + stored.sender_profile_cache.length + ' chars)');
+                return true;
+            } else {
+                log('[CV] ⚠ No LinkedIn profile found in storage. Keys checked: sender_profile_cache');
+                return false;
+            }
+        } catch (error) {
+            log('[CV] ✗ Error loading LinkedIn profile: ' + error.message);
+            return false;
+        }
+    }
+    
+    // Proceed with CV Analysis Button
+    if (proceedWithCvBtn) {
+        proceedWithCvBtn.addEventListener('click', async () => {
+            if (!currentJobData || !currentCvData) {
+                alert('Please analyze a job and select a CV source first');
+                return;
+            }
+            
+            // Switch to CV Editor tab
+            showTab('tab-cv-edit');
+            // Trigger CV analysis
+            await analyzeCvAgainstJob();
+        });
+    }
+    
+    // Initialize: Load LinkedIn profile if available
+    (async () => {
+        await loadLinkedInProfileAsCv();
+        // Check if CV is ready (in case job was already analyzed)
+        checkCvReady();
+    })();
     
     // Initialize: Show marketing product by default
     showProduct('marketing');
