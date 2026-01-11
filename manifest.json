@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "LinkedIn AI Sales Copilot",
+  "name": "LinkedIn AI Copilot",
   "version": "1.0",
-  "description": "AI-powered sales assistant for analyzing LinkedIn profiles.",
+  "description": "AI-powered Content Copilot for LinkedIn.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -12,7 +12,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["popup/documentation.html"],
+      "resources": ["popup/documentation.html", "popup/onboarding-modal.html"],
       "matches": ["<all_urls>"]
     }
   ],

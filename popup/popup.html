@@ -13,8 +13,8 @@
         <!-- Product Selection -->
         <nav class="product-nav">
             <button class="product-btn active" data-product="marketing">📊 Marketing</button>
-            <button class="product-btn" data-product="content">✍️ Content Copilot</button>
-            <button class="product-btn" data-product="jobs">💼 Job Application</button>
+            <button class="product-btn" data-product="content">✍️ Content </button>
+            <button class="product-btn" data-product="jobs">💼 Job</button>
             <button class="product-btn settings-btn" data-target="tab-settings">⚙️ Settings</button>
         </nav>
 
@@ -26,6 +26,7 @@
 
         <!-- Content Copilot Product Tabs -->
         <nav class="main-nav content-nav hidden" id="content-nav">
+            <button class="nav-item" data-target="tab-content-setup">Setup</button>
             <button class="nav-item" data-target="tab-inspire">Inspire</button>
             <button class="nav-item" data-target="tab-create">Create</button>
             <button class="nav-item" data-target="tab-results-content">History</button>
@@ -208,6 +209,41 @@
                 </div>
             </div>
 
+            <!-- TAB: CONTENT SETUP -->
+            <div id="tab-content-setup" class="view hidden">
+                <header class="section-header">
+                    <h2>Content Setup</h2>
+                    <p class="section-subtitle">Configure your content goals and target audience</p>
+                </header>
+
+                <section class="input-group">
+                    <label for="contentGoal">Content Goal</label>
+                    <textarea id="contentGoal" placeholder="E.g., Build personal brand as a SaaS expert, Share insights about B2B marketing, Establish thought leadership in AI/ML..."></textarea>
+                    <small class="settings-hint">What do you want to achieve with your LinkedIn content?</small>
+                </section>
+
+                <section class="input-group">
+                    <label for="contentIcp">Target Audience (ICP)</label>
+                    <textarea id="contentIcp" placeholder="E.g., B2B SaaS founders, Marketing directors at mid-size companies, Tech professionals interested in AI..."></textarea>
+                    <small class="settings-hint">Who is your target audience for this content?</small>
+                </section>
+
+                <details class="config-card">
+                    <summary>Your Expertise & Value</summary>
+                    <div class="card-body">
+                        <label>What you do / Your expertise</label>
+                        <textarea id="contentExpertise" placeholder="E.g., I help B2B SaaS companies scale their marketing through data-driven strategies..."></textarea>
+
+                        <label>Key Points / Proof Points</label>
+                        <textarea id="contentProofPoints" placeholder="E.g., 10+ years experience, Helped 50+ companies, Case studies, Certifications..."></textarea>
+                    </div>
+                </details>
+
+                <div class="info-box" style="margin-top: 16px;">
+                    <strong>💡 Tip:</strong> These settings are used to generate content that aligns with your goals and resonates with your target audience. They're separate from Marketing settings.
+                </div>
+            </div>
+
             <!-- TAB: INSPIRE (Content Inspiration) -->
             <div id="tab-inspire" class="view hidden">
                 <header class="section-header">
@@ -256,8 +292,47 @@
                     <p class="section-subtitle">Generate LinkedIn content tailored to your goals and ICP</p>
                 </header>
 
-                <!-- Content Type & Topic -->
-                <div class="content-form-grid">
+               
+
+                <!-- Topic Selection -->
+                <section class="input-group">
+                                        
+                    <!-- Custom Topics Section -->
+                    <div id="customTopicsContainer" class="custom-topics-container">
+                        <div class="custom-topics-header">
+                            <h5>Custom Topics</h5>
+                            <button id="addCustomTopicBtn" class="secondary-btn" style="font-size: 11px; padding: 4px 10px;">➕ Add</button>
+                        </div>
+                        <div id="customTopicsList" class="custom-topics-list"></div>
+                        <div id="customTopicInputSection" class="custom-topic-input-section hidden">
+                            <input type="text" id="newCustomTopicInput" placeholder="Enter a topic idea..." class="custom-topic-input" />
+                            <div class="custom-topic-actions">
+                                <button id="saveCustomTopicBtn" class="secondary-btn" style="font-size: 11px; padding: 4px 10px;">Save</button>
+                                <button id="cancelCustomTopicBtn" class="secondary-btn" style="font-size: 11px; padding: 4px 10px; background: transparent; color: var(--text-secondary);">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <label for="contentTopic">Content Topic / Focus</label>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <button id="suggestTopicsBtn" class="secondary-btn" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;">💡 Suggest Topics</button>
+                        <button id="clearTopicBtn" class="secondary-btn" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;">Clear</button>
+                    </div>
+
+                    <!-- Suggested Topics -->
+                    <div id="suggestedTopicsContainer" class="suggested-topics-container hidden"></div>
+
+                    
+                </section>
+                
+                <div class="suggested-topics-container">
+                    <textarea id="contentTopic" placeholder="E.g., Common mistakes in SEO, Latest trends in SaaS, How to improve conversion rates... (Leave empty for AI to suggest based on your profile and ICP)"></textarea>
+                </div>
+
+                 <!-- Content Type & Topic -->
+                 <div class="content-form-grid">
+                    
                     <section class="input-group">
                         <label for="contentType">Content Type</label>
                         <select id="contentType" class="settings-input">
@@ -278,39 +353,9 @@
                             <option value="thought-leadership">Thought Leadership</option>
                             <option value="personal">Personal Story</option>
                         </select>
-                    </section>
-                </div>
-
-                <!-- Topic Selection -->
-                <section class="input-group">
-                    <label for="contentTopic">Content Topic / Focus</label>
-                    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-                        <button id="suggestTopicsBtn" class="secondary-btn" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;">💡 Suggest Topics</button>
-                        <button id="clearTopicBtn" class="secondary-btn" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;">Clear</button>
-                    </div>
-                    
-                    <!-- Suggested Topics -->
-                    <div id="suggestedTopicsContainer" class="suggested-topics-container hidden"></div>
-                    
-                    <!-- Custom Topics Section -->
-                    <div id="customTopicsContainer" class="custom-topics-container">
-                        <div class="custom-topics-header">
-                            <h5>Your Custom Topics</h5>
-                            <button id="addCustomTopicBtn" class="secondary-btn" style="font-size: 11px; padding: 4px 10px;">➕ Add</button>
-                        </div>
-                        <div id="customTopicsList" class="custom-topics-list"></div>
-                        <div id="customTopicInputSection" class="custom-topic-input-section hidden">
-                            <input type="text" id="newCustomTopicInput" placeholder="Enter a topic idea..." class="custom-topic-input" />
-                            <div class="custom-topic-actions">
-                                <button id="saveCustomTopicBtn" class="secondary-btn" style="font-size: 11px; padding: 4px 10px;">Save</button>
-                                <button id="cancelCustomTopicBtn" class="secondary-btn" style="font-size: 11px; padding: 4px 10px; background: transparent; color: var(--text-secondary);">Cancel</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Topic Input Field -->
-                    <textarea id="contentTopic" placeholder="E.g., Common mistakes in SEO, Latest trends in SaaS, How to improve conversion rates... (Leave empty for AI to suggest based on your profile and ICP)"></textarea>
                 </section>
+                    
+                </div>
 
                 <!-- Strategy Options -->
                 <details class="config-card">
@@ -656,177 +701,8 @@
         </main>
     </div>
 
-    <!-- Onboarding Welcome Modal -->
-    <div id="onboardingModal" class="modal hidden">
-        <div class="modal-content onboarding-content">
-            <div class="onboarding-header">
-                <h2>Welcome to AI Sales Copilot! 🚀</h2>
-                <button id="closeOnboardingModal" class="close-btn">&times;</button>
-            </div>
-            
-            <div class="onboarding-body">
-                <!-- Step 1: Welcome -->
-                <div class="onboarding-step active" data-step="1">
-                    <div class="step-icon">👋</div>
-                    <h3>Welcome!</h3>
-                    <p>AI Sales Copilot is your complete LinkedIn outreach and content creation assistant. It helps you create personalized messages and engaging content to improve your LinkedIn presence.</p>
-                    <div class="feature-highlights">
-                        <div class="feature-item">📊 Marketing: Prospect analysis & outreach</div>
-                        <div class="feature-item">✍️ Content Copilot: Content creation & inspiration</div>
-                        <div class="feature-item">✨ AI-powered analysis & generation</div>
-                        <div class="feature-item">🎯 ICP matching & fit scoring</div>
-                    </div>
-                </div>
-
-                <!-- Step 2: Products Overview -->
-                <div class="onboarding-step" data-step="2">
-                    <div class="step-icon">📦</div>
-                    <h3>Two Powerful Products</h3>
-                    <p>Choose the right tool for your needs:</p>
-                    <div class="feature-highlights">
-                        <div class="feature-item">
-                            <strong>📊 Marketing</strong>
-                            <p style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">Analyze prospects, generate personalized outreach messages, and find similar prospects</p>
-                        </div>
-                        <div class="feature-item">
-                            <strong>✍️ Content Copilot</strong>
-                            <p style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">Get content inspiration, generate LinkedIn posts, and build your content library</p>
-                        </div>
-                    </div>
-                    <div class="info-box-onboarding" style="margin-top: 16px;">
-                        <strong>💡 Tip:</strong> Switch between products using the top navigation. Settings are shared across both products.
-                    </div>
-                </div>
-
-                <!-- Step 3: Marketing Product -->
-                <div class="onboarding-step" data-step="3">
-                    <div class="step-icon">📊</div>
-                    <h3>Marketing Product</h3>
-                    <p>Perfect for sales outreach and prospect analysis:</p>
-                    <div class="step-instructions">
-                        <ol>
-                            <li><strong>Compose Tab:</strong> Set your outreach goal, ICP definition, and seller configuration</li>
-                            <li><strong>Capture Profile:</strong> Click "Capture My Profile" in Settings to enable shared context matching</li>
-                            <li><strong>Analyze Profile:</strong> Navigate to a LinkedIn profile and click "Analyze Profile"</li>
-                            <li><strong>Results Tab:</strong> View fit scores, generated messages, and detailed analysis</li>
-                        </ol>
-                    </div>
-                    <div class="info-box-onboarding">
-                        <strong>🎯 Key Features:</strong> Fit scoring, shared context matching, personalized messages, related prospects discovery
-                    </div>
-                </div>
-
-                <!-- Step 4: Content Copilot -->
-                <div class="onboarding-step" data-step="4">
-                    <div class="step-icon">✍️</div>
-                    <h3>Content Copilot</h3>
-                    <p>Create engaging LinkedIn content that builds your brand:</p>
-                    <div class="step-instructions">
-                        <ol>
-                            <li><strong>Inspire Tab:</strong> Analyze any LinkedIn profile to get content ideas and writing style insights</li>
-                            <li><strong>Create Tab:</strong> Generate content using AI suggestions or your custom topics</li>
-                            <li><strong>Results Tab:</strong> View generated content and access your content library</li>
-                        </ol>
-                    </div>
-                    <div class="info-box-onboarding">
-                        <strong>💡 Pro Tips:</strong> Add custom topics to influence AI suggestions. Analyze successful profiles to learn their style. Save analyses for future reference.
-                    </div>
-                </div>
-
-                <!-- Step 5: Setup Profile -->
-                <div class="onboarding-step" data-step="5">
-                    <div class="step-icon">👤</div>
-                    <h3>Capture Your Profile</h3>
-                    <p>To enable "Shared Context" matching and better content personalization, capture your LinkedIn profile:</p>
-                    <ol class="step-instructions">
-                        <li>Go to the <strong>Settings</strong> tab (accessible from any product)</li>
-                        <li>Navigate to your own LinkedIn profile page</li>
-                        <li>Click <strong>"Capture My Profile"</strong></li>
-                        <li>Wait for the analysis to complete</li>
-                    </ol>
-                    <div class="info-box-onboarding">
-                        <strong>💡 Why this matters:</strong> Enables shared context matching in Marketing and better content personalization in Content Copilot.
-                    </div>
-                </div>
-
-                <!-- Step 6: Configure Goals -->
-                <div class="onboarding-step" data-step="6">
-                    <div class="step-icon">🎯</div>
-                    <h3>Configure Your Goals</h3>
-                    <p>Set up your outreach strategy in Marketing → Compose tab:</p>
-                    <ol class="step-instructions">
-                        <li><strong>Outreach Goal:</strong> What you want to achieve (e.g., "Sell enterprise SEO services")</li>
-                        <li><strong>ICP Definition:</strong> Your ideal customer profile (e.g., "B2B SaaS, 50-200 employees")</li>
-                        <li><strong>Seller Configuration:</strong> What you sell and proof points</li>
-                        <li><strong>Strategy:</strong> Choose risk level (Safe/Contextual/Risky) and offer type</li>
-                    </ol>
-                    <div class="info-box-onboarding">
-                        <strong>💡 Tip:</strong> These settings are also used by Content Copilot to generate more relevant content topics.
-                    </div>
-                </div>
-
-                <!-- Step 7: Content Copilot Features -->
-                <div class="onboarding-step" data-step="7">
-                    <div class="step-icon">💡</div>
-                    <h3>Content Copilot Features</h3>
-                    <p>Discover powerful content creation tools:</p>
-                    <ol class="step-instructions">
-                        <li><strong>Inspire Tab:</strong> Analyze any LinkedIn profile to learn their writing style and get topic ideas</li>
-                        <li><strong>Custom Topics:</strong> Add your own topic ideas to influence AI suggestions</li>
-                        <li><strong>Create Tab:</strong> Generate posts, articles, carousels, or video scripts</li>
-                        <li><strong>Results Tab:</strong> View generated content and access your content library</li>
-                    </ol>
-                    <div class="info-box-onboarding">
-                        <strong>💡 Pro Tip:</strong> Analyze successful creators' profiles to learn what works. Their topics and style will influence your content suggestions.
-                    </div>
-                </div>
-
-                <!-- Step 8: Ready to Start -->
-                <div class="onboarding-step" data-step="8">
-                    <div class="step-icon">🎉</div>
-                    <h3>You're All Set!</h3>
-                    <p>You now know the basics. Here are some quick tips:</p>
-                    <div class="tips-grid">
-                        <div class="tip-item">
-                            <strong>📊 Marketing</strong>
-                            <p>Analyze prospects, get fit scores, and generate personalized messages</p>
-                        </div>
-                        <div class="tip-item">
-                            <strong>✍️ Content Copilot</strong>
-                            <p>Get inspiration, generate content, and build your content library</p>
-                        </div>
-                        <div class="tip-item">
-                            <strong>🔄 Regenerate</strong>
-                            <p>Try different approaches without re-analyzing or re-generating</p>
-                        </div>
-                        <div class="tip-item">
-                            <strong>📚 Documentation</strong>
-                            <p>Access full documentation from Settings → Help & Documentation</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="onboarding-footer">
-                <div class="step-indicators">
-                    <span class="step-dot active" data-step="1"></span>
-                    <span class="step-dot" data-step="2"></span>
-                    <span class="step-dot" data-step="3"></span>
-                    <span class="step-dot" data-step="4"></span>
-                    <span class="step-dot" data-step="5"></span>
-                    <span class="step-dot" data-step="6"></span>
-                    <span class="step-dot" data-step="7"></span>
-                    <span class="step-dot" data-step="8"></span>
-                </div>
-                <div class="onboarding-actions">
-                    <button id="onboardingPrev" class="secondary-btn" style="display: none;">Previous</button>
-                    <button id="onboardingNext" class="primary-btn">Next</button>
-                    <button id="onboardingSkip" class="secondary-btn" style="display: none;">Skip Tutorial</button>
-                    <button id="onboardingStart" class="primary-btn" style="display: none;">Get Started</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Onboarding Welcome Modal - Loaded dynamically -->
+    <div id="onboardingModalContainer"></div>
 
     <!-- Payment Modal -->
     <div id="paymentModal" class="modal hidden">

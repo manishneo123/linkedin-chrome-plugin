@@ -1803,6 +1803,24 @@ pre {
     border-radius: 8px;
 }
 
+.suggested-topics-container textarea {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 80px;
+    padding: 12px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+}
+
+.suggested-topics-container textarea:focus {
+    border-color: var(--accent-color);
+    outline: none;
+}
+
 .suggested-topics-header {
     margin-bottom: 16px;
 }

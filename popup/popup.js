@@ -27,15 +27,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userIdDisplay = document.getElementById('userIdDisplay');
     const copyUserIdBtn = document.getElementById('copyUserIdBtn');
     
-    // Onboarding elements
-    const onboardingModal = document.getElementById('onboardingModal');
-    const closeOnboardingModal = document.getElementById('closeOnboardingModal');
-    const onboardingNext = document.getElementById('onboardingNext');
-    const onboardingPrev = document.getElementById('onboardingPrev');
-    const onboardingSkip = document.getElementById('onboardingSkip');
-    const onboardingStart = document.getElementById('onboardingStart');
-    const onboardingSteps = document.querySelectorAll('.onboarding-step');
-    const stepDots = document.querySelectorAll('.step-dot');
+    // Onboarding elements (will be loaded dynamically)
+    let onboardingModal = null;
+    let closeOnboardingModal = null;
+    let onboardingNext = null;
+    let onboardingPrev = null;
+    let onboardingSkip = null;
+    let onboardingStart = null;
+    let onboardingSteps = null;
+    let stepDots = null;
 
     // Status
     const analyzeStatusBadge = document.getElementById('analyzeStatusBadge');
@@ -47,6 +47,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const generateContentBtn = document.getElementById('generateContentBtn');
     const contentTypeSelect = document.getElementById('contentType');
     const contentTopicInput = document.getElementById('contentTopic');
+    
+    // Content Setup elements
+    const contentGoalInput = document.getElementById('contentGoal');
+    const contentIcpInput = document.getElementById('contentIcp');
+    const contentExpertiseInput = document.getElementById('contentExpertise');
+    const contentProofPointsInput = document.getElementById('contentProofPoints');
     const contentToneSelect = document.getElementById('contentTone');
     const contentCTAInput = document.getElementById('contentCTA');
     const includePersonalStorySelect = document.getElementById('includePersonalStory');
@@ -272,7 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const CREDIT_CONFIG = {
         FREE_TOKENS: 10000,
         TOKEN_COST_PER_1M: {
-            'gpt-4o-mini': { input: 0.15, output: 0.60 }
+            'gpt-5.2': { input: 0.15, output: 0.60 }
         }
     };
 
@@ -356,7 +362,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     /**
      * Wrapper for GPT API calls with credit tracking
      */
-    async function callGPTWithTracking(url, options, model = 'gpt-4o-mini', userApiKey = null, processType = 'gpt_api_call', processDescription = null, prospectId = null,currentUserId) {
+    async function callGPTWithTracking(url, options, model = 'gpt-5.2', userApiKey = null, processType = 'gpt_api_call', processDescription = null, prospectId = null,currentUserId) {
         const useBackend = useBackendCreditsCheckbox.checked;
         
         // If user has their own API key and backend is disabled, use it directly
@@ -630,7 +636,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         'openai_api_key', 'user_goal', 'icp_definition',
         'offer_details', 'proof_points', 'risk_level', 'offer_type',
         'sender_profile_cache', 'sender_profile_structured', 'sender_profile_date',
-        'use_backend_credits'
+        'use_backend_credits',
+        'content_goal', 'content_icp', 'content_expertise', 'content_proof_points'
     ]);
 
     if (stored.openai_api_key) apiKeyInput.value = stored.openai_api_key;
@@ -640,6 +647,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (stored.proof_points) proofPointsInput.value = stored.proof_points;
     if (stored.risk_level) riskLevelInput.value = stored.risk_level;
     if (stored.offer_type) offerTypeInput.value = stored.offer_type;
+    
+    // Load Content Copilot settings
+    if (stored.content_goal && contentGoalInput) contentGoalInput.value = stored.content_goal;
+    if (stored.content_icp && contentIcpInput) contentIcpInput.value = stored.content_icp;
+    if (stored.content_expertise && contentExpertiseInput) contentExpertiseInput.value = stored.content_expertise;
+    if (stored.content_proof_points && contentProofPointsInput) contentProofPointsInput.value = stored.content_proof_points;
+    
+    // Load Content Copilot settings
+    if (stored.content_goal && contentGoalInput) contentGoalInput.value = stored.content_goal;
+    if (stored.content_icp && contentIcpInput) contentIcpInput.value = stored.content_icp;
+    if (stored.content_expertise && contentExpertiseInput) contentExpertiseInput.value = stored.content_expertise;
+    if (stored.content_proof_points && contentProofPointsInput) contentProofPointsInput.value = stored.content_proof_points;
     
     // Initialize backend credits toggle and API key section visibility
     if (stored.use_backend_credits !== undefined) {
@@ -744,18 +763,83 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // === Onboarding Logic ===
     let currentOnboardingStep = 1;
-    const totalOnboardingSteps = 8;
+    const totalOnboardingSteps = 9;
+
+    // Load onboarding modal HTML
+    async function loadOnboardingModal() {
+        try {
+            const container = document.getElementById('onboardingModalContainer');
+            if (!container) return;
+
+            const response = await fetch(chrome.runtime.getURL('popup/onboarding-modal.html'));
+            const html = await response.text();
+            container.innerHTML = html;
+
+            // Update references to onboarding elements
+            onboardingModal = document.getElementById('onboardingModal');
+            closeOnboardingModal = document.getElementById('closeOnboardingModal');
+            onboardingNext = document.getElementById('onboardingNext');
+            onboardingPrev = document.getElementById('onboardingPrev');
+            onboardingSkip = document.getElementById('onboardingSkip');
+            onboardingStart = document.getElementById('onboardingStart');
+            onboardingSteps = document.querySelectorAll('.onboarding-step');
+            stepDots = document.querySelectorAll('.step-dot');
+
+            // Set up event listeners after loading
+            setupOnboardingEventListeners();
+        } catch (error) {
+            log(`Error loading onboarding modal: ${error.message}`);
+        }
+    }
+
+    function setupOnboardingEventListeners() {
+        // Onboarding event listeners
+        if (onboardingNext) {
+            onboardingNext.addEventListener('click', nextOnboardingStep);
+        }
+        
+        if (onboardingPrev) {
+            onboardingPrev.addEventListener('click', prevOnboardingStep);
+        }
+        
+        if (onboardingStart) {
+            onboardingStart.addEventListener('click', completeOnboarding);
+        }
+        
+        if (onboardingSkip) {
+            onboardingSkip.addEventListener('click', completeOnboarding);
+        }
+        
+        if (closeOnboardingModal) {
+            closeOnboardingModal.addEventListener('click', completeOnboarding);
+        }
+        
+        // Allow clicking step dots to jump to steps
+        if (stepDots) {
+            stepDots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    showOnboardingStep(index + 1);
+                });
+            });
+        }
+    }
 
     async function checkAndShowOnboarding() {
         const stored = await chrome.storage.local.get('onboarding_completed');
         if (!stored.onboarding_completed) {
+            // Load onboarding modal first
+            await loadOnboardingModal();
             // First time user - show onboarding
-            showOnboardingStep(1);
-            onboardingModal.classList.remove('hidden');
+            if (onboardingModal) {
+                showOnboardingStep(1);
+                onboardingModal.classList.remove('hidden');
+            }
         }
     }
 
     function showOnboardingStep(step) {
+        if (!onboardingSteps || !stepDots) return;
+        
         currentOnboardingStep = step;
         
         // Hide all steps
@@ -777,10 +861,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         // Update navigation buttons
-        onboardingPrev.style.display = step > 1 ? 'block' : 'none';
-        onboardingNext.style.display = step < totalOnboardingSteps ? 'block' : 'none';
-        onboardingStart.style.display = step === totalOnboardingSteps ? 'block' : 'none';
-        onboardingSkip.style.display = step < totalOnboardingSteps ? 'block' : 'none';
+        if (onboardingPrev) onboardingPrev.style.display = step > 1 ? 'block' : 'none';
+        if (onboardingNext) onboardingNext.style.display = step < totalOnboardingSteps ? 'block' : 'none';
+        if (onboardingStart) onboardingStart.style.display = step === totalOnboardingSteps ? 'block' : 'none';
+        if (onboardingSkip) onboardingSkip.style.display = step < totalOnboardingSteps ? 'block' : 'none';
     }
 
     function nextOnboardingStep() {
@@ -797,40 +881,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function completeOnboarding() {
         await chrome.storage.local.set({ onboarding_completed: true });
-        onboardingModal.classList.add('hidden');
+        if (onboardingModal) {
+            onboardingModal.classList.add('hidden');
+        }
         log("Onboarding completed.");
     }
 
-    // Onboarding event listeners
-    if (onboardingNext) {
-        onboardingNext.addEventListener('click', nextOnboardingStep);
-    }
-    
-    if (onboardingPrev) {
-        onboardingPrev.addEventListener('click', prevOnboardingStep);
-    }
-    
-    if (onboardingStart) {
-        onboardingStart.addEventListener('click', completeOnboarding);
-    }
-    
-    if (onboardingSkip) {
-        onboardingSkip.addEventListener('click', completeOnboarding);
-    }
-    
-    if (closeOnboardingModal) {
-        closeOnboardingModal.addEventListener('click', completeOnboarding);
-    }
-    
-    // Allow clicking step dots to jump to steps
-    stepDots.forEach((dot, index) => {
-        dot.addEventListener('click', () => {
-            showOnboardingStep(index + 1);
-        });
+    // Load onboarding modal on page load
+    loadOnboardingModal().then(() => {
+        // Check and show onboarding on load
+        checkAndShowOnboarding();
     });
-
-    // Check and show onboarding on load
-    checkAndShowOnboarding();
 
     // === Auto-Save ===
     const saveSetting = (key, val) => chrome.storage.local.set({ [key]: val });
@@ -842,6 +903,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     proofPointsInput.addEventListener('change', () => saveSetting('proof_points', proofPointsInput.value));
     riskLevelInput.addEventListener('change', () => saveSetting('risk_level', riskLevelInput.value));
     offerTypeInput.addEventListener('change', () => saveSetting('offer_type', offerTypeInput.value));
+    
+    // Content Copilot settings auto-save
+    if (contentGoalInput) {
+        contentGoalInput.addEventListener('change', () => saveSetting('content_goal', contentGoalInput.value));
+    }
+    if (contentIcpInput) {
+        contentIcpInput.addEventListener('change', () => saveSetting('content_icp', contentIcpInput.value));
+    }
+    if (contentExpertiseInput) {
+        contentExpertiseInput.addEventListener('change', () => saveSetting('content_expertise', contentExpertiseInput.value));
+    }
+    if (contentProofPointsInput) {
+        contentProofPointsInput.addEventListener('change', () => saveSetting('content_proof_points', contentProofPointsInput.value));
+    }
 
     // === Product Navigation Logic ===
     function showProduct(product) {
@@ -867,17 +942,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (marketingNav) marketingNav.classList.add('hidden');
             if (contentNav) contentNav.classList.remove('hidden');
             if (jobsNav) jobsNav.classList.add('hidden');
-            // Show first content tab (Inspire) and set it as active
-            if (contentNav) {
-                contentNav.querySelectorAll('.nav-item').forEach((btn, index) => {
-                    if (index === 0) {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
-                });
-            }
-            showTab('tab-inspire');
+            // Show first tab of content (Setup)
+            showTab('tab-content-setup');
         } else if (product === 'jobs') {
             if (marketingNav) marketingNav.classList.add('hidden');
             if (contentNav) contentNav.classList.add('hidden');
@@ -1047,7 +1113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = response.data;
 
             // Use GPT to extract structured data (including premium status)
-            updateStatus("Analyzing with GPT...", true);
+            updateStatus("Analyzing with AI...", true);
             log("Calling GPT to extract structured data...");
             const currentUserId = await getUserId();
             console.log("Current user ID: " + currentUserId);
@@ -1192,7 +1258,7 @@ Extract and return ONLY a JSON object with this exact structure:
 
         log("Sending GPT extraction request...");
         const requestBody = {
-                model: "gpt-4o-mini",
+                model: "gpt-5.2",
                 messages: [
                     { role: "system", content: "You are a data extraction assistant. Extract LinkedIn profile data and return valid JSON only." },
                     { role: "user", content: prompt }
@@ -1210,7 +1276,7 @@ Extract and return ONLY a JSON object with this exact structure:
                 },
                 body: JSON.stringify(requestBody)
             },
-            'gpt-4o-mini',
+            'gpt-5.2',
             apiKey,
             'profile_extraction',
             'Extract structured profile data from LinkedIn profile text',
@@ -1332,7 +1398,7 @@ RULES:
 
         log("[ProspectExtract] Sending to GPT...");
         const requestBody = {
-                model: "gpt-4o-mini",
+                model: "gpt-5.2",
                 messages: [
                     { role: "system", content: "You are a data extraction assistant. Extract LinkedIn profile data and return valid JSON only." },
                     { role: "user", content: prompt }
@@ -1350,7 +1416,7 @@ RULES:
                 },
                 body: JSON.stringify(requestBody)
             },
-            'gpt-4o-mini',
+            'gpt-5.2',
             apiKey,
             'post_summarization',
             'Summarize posts and extract prospect interests',
@@ -1494,7 +1560,7 @@ Rules:
 
         log("[PostSummary] Filtering posts for important content...");
         const filterRequestBody = {
-            model: "gpt-4o-mini",
+            model: "gpt-5.2",
             messages: [
                 { role: "system", content: "You are a sales intelligence assistant. Identify important posts. Return valid JSON only." },
                 { role: "user", content: filterPrompt }
@@ -1512,7 +1578,7 @@ Rules:
                 },
                 body: JSON.stringify(filterRequestBody)
             },
-            'gpt-4o-mini',
+            'gpt-5.2',
             apiKey,
             'post_filtering',
             'Filter important posts from prospect activity',
@@ -1602,7 +1668,7 @@ Rules:
 
         log("[PostSummary] Sending summarization request to GPT...");
         const requestBody = {
-            model: "gpt-4o-mini",
+            model: "gpt-5.2",
             messages: [
                 { role: "system", content: "You are a sales intelligence assistant. Analyze posts and extract actionable insights. Return valid JSON only." },
                 { role: "user", content: prompt }
@@ -1620,7 +1686,7 @@ Rules:
                 },
                 body: JSON.stringify(requestBody)
             },
-            'gpt-4o-mini',
+            'gpt-5.2',
             apiKey,
             'post_summarization',
             'Summarize posts and extract prospect interests',
@@ -1707,7 +1773,7 @@ Rules:
 
         log("[RelatedProfiles] Sending analysis request to GPT...");
         const requestBody = {
-            model: "gpt-4o-mini",
+            model: "gpt-5.2",
             messages: [
                 { role: "system", content: "You are a sales intelligence assistant. Analyze profiles and return valid JSON only." },
                 { role: "user", content: prompt }
@@ -1725,7 +1791,7 @@ Rules:
                 },
                 body: JSON.stringify(requestBody)
             },
-            'gpt-4o-mini',
+            'gpt-5.2',
             apiKey,
             'related_profiles_analysis',
             'Analyze related profiles for relevance to seller',
@@ -3429,7 +3495,7 @@ Focus on:
             log("[ContentAnalysis] Analyzing profile content...");
             
             const requestBody = {
-                model: "gpt-4o-mini",
+                model: "gpt-5.2",
                 messages: [
                     { role: "system", content: "You are a content strategy expert. Analyze LinkedIn posts to extract topics, themes, and content ideas. Return valid JSON only." },
                     { role: "user", content: analysisPrompt }
@@ -3933,9 +3999,14 @@ Return ONLY a JSON object:
         }
         
         try {
-            // Get user context
+            // Get user context - use Content Copilot settings instead of Marketing settings
             const stored = await chrome.storage.local.get([
                 'sender_profile_structured',
+                'content_goal',
+                'content_icp',
+                'content_expertise',
+                'content_proof_points',
+                // Fallback to marketing settings if content settings not available
                 'user_goal',
                 'icp_definition',
                 'offer_details',
@@ -3943,10 +4014,11 @@ Return ONLY a JSON object:
             ]);
             
             const senderStructured = stored.sender_profile_structured;
-            const userGoal = stored.user_goal || '';
-            const icpDefinition = stored.icp_definition || '';
-            const offerDetails = stored.offer_details || '';
-            const proofPoints = stored.proof_points || '';
+            // Use content-specific settings, fallback to marketing settings if not set
+            const userGoal = stored.content_goal || stored.user_goal || '';
+            const icpDefinition = stored.content_icp || stored.icp_definition || '';
+            const offerDetails = stored.content_expertise || stored.offer_details || '';
+            const proofPoints = stored.content_proof_points || stored.proof_points || '';
             
             // Get content parameters
             const contentType = contentTypeSelect?.value || 'post';
@@ -4032,7 +4104,7 @@ Return ONLY a JSON object with this structure:
             log(`[ContentGen] Type: ${contentType}, Tone: ${contentTone}, Topic: ${contentTopic || 'AI-suggested'}`);
             
             const requestBody = {
-                model: "gpt-4o-mini",
+                model: "gpt-5.2",
                 messages: [
                     { role: "system", content: "You are an expert LinkedIn content creator. Generate high-quality, engaging LinkedIn content that builds personal brand and improves outreach performance. Return valid JSON only." },
                     { role: "user", content: prompt }
