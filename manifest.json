@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "LinkedIn AI Copilot",
   "version": "1.0",
-  "description": "AI-powered Content Copilot for LinkedIn.",
+  "description": "AI-powered Copilot for LinkedIn.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -21,7 +21,7 @@
     "https://linkedin.com/*"
   ],
   "action": {
-    "default_title": "AI Sales Copilot"
+    "default_title": "AI LinkedIn Copilot"
   },
   "side_panel": {
     "default_path": "popup/popup.html"

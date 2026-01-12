@@ -215,8 +215,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     log("Extension loaded. Initializing...");
 
     // === Backend Configuration ===
-    const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
-    //const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
+    //const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
+    const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
     let userId = null;
     let apiKey = null;
 
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // === Credit Management System ===
     const CREDIT_CONFIG = {
-        FREE_TOKENS: 10000,
+        FREE_TOKENS: 200000,
         TOKEN_COST_PER_1M: {
             'gpt-5.2': { input: 0.15, output: 0.60 }
         }
@@ -664,8 +664,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (stored.use_backend_credits !== undefined) {
         useBackendCreditsCheckbox.checked = stored.use_backend_credits;
     } else {
-        // Default to false (use own API key) if not set
-        useBackendCreditsCheckbox.checked = false;
+        // Default to true (use backend credits) if not set
+        useBackendCreditsCheckbox.checked = true;
+        // Save the default value
+        await chrome.storage.local.set({ use_backend_credits: true });
     }
     
     // Set visibility based on checkbox state - use classList to properly handle .hidden class
@@ -679,6 +681,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     await updateCreditsDisplay();
+
+    // === First-time user initialization: Create user and get API key ===
+    async function initializeFirstTimeUser() {
+        try {
+            // Check if user already exists
+            const stored = await chrome.storage.local.get(['user_id', 'api_key', 'user_initialized']);
+            
+            // If user is already initialized, skip
+            if (stored.user_initialized) {
+                log('[Init] User already initialized');
+                return;
+            }
+            
+            // Get or create user ID
+            const currentUserId = await getUserId();
+            
+            // Get or create API key (this will create user in backend if needed)
+            const currentApiKey = await getApiKey();
+            
+            // Mark as initialized
+            await chrome.storage.local.set({ user_initialized: true });
+            
+            log(`[Init] ✓ User initialized: ${currentUserId.substring(0, 20)}...`);
+            log(`[Init] ✓ API key generated and stored`);
+            
+            // Refresh credits display
+            await updateCreditsDisplay();
+            
+            // Update user ID display
+            await loadAndDisplayUserId();
+        } catch (error) {
+            log(`[Init] Error initializing user: ${error.message}`);
+            // Don't throw - allow plugin to work even if initialization fails
+        }
+    }
+    
+    // Initialize user on first load (only if using backend credits)
+    if (useBackendCreditsCheckbox.checked) {
+        initializeFirstTimeUser();
+    }
 
     if (stored.sender_profile_cache) {
         senderProfileStatus.textContent = `Cached: ${stored.sender_profile_date || 'Unknown'}`;
