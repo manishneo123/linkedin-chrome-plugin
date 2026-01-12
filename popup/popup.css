@@ -1393,6 +1393,7 @@ pre {
     max-height: 85vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .onboarding-header {
@@ -1402,6 +1403,7 @@ pre {
     margin-bottom: 24px;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .onboarding-header h2 {
@@ -1411,10 +1413,12 @@ pre {
 }
 
 .onboarding-body {
-    flex: 1;
-    min-height: 400px;
+    flex: 1 1 auto;
+    min-height: 0;
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 .onboarding-step {
@@ -1582,6 +1586,7 @@ pre {
     margin-top: 24px;
     padding-top: 20px;
     border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .step-indicators {
@@ -2422,9 +2427,6 @@ pre {
     background: var(--input-bg);
     padding: 0 4px;
     border-radius: 2px;
-}
-    resize: vertical;
-    margin-top: 12px;
 }
 
 .cv-editor-textarea:focus {

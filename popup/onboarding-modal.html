@@ -1,0 +1,201 @@
+<!-- Onboarding Welcome Modal -->
+<div id="onboardingModal" class="modal hidden">
+    <div class="modal-content onboarding-content">
+        <div class="onboarding-header">
+            <h2>Welcome to LinkedIn AI Copilot! 🚀</h2>
+            <button id="closeOnboardingModal" class="close-btn">&times;</button>
+        </div>
+        
+        <div class="onboarding-body">
+            <!-- Step 1: Welcome -->
+            <div class="onboarding-step active" data-step="1">
+                <div class="step-icon">👋</div>
+                <h3>Welcome!</h3>
+                <p>AI Sales Copilot is your complete LinkedIn outreach and content creation assistant. It helps you create personalized messages and engaging content to improve your LinkedIn presence.</p>
+                <div class="feature-highlights">
+                    <div class="feature-item">📊 Marketing: Prospect analysis & outreach</div>
+                    <div class="feature-item">✍️ Content Copilot: Content creation & inspiration</div>
+                    <div class="feature-item">💼 Job Application: CV optimization & job matching</div>
+                    <div class="feature-item">✨ AI-powered analysis & generation</div>
+                    <div class="feature-item">🎯 ICP matching & fit scoring</div>
+                </div>
+            </div>
+
+            <!-- Step 2: Products Overview -->
+            <div class="onboarding-step" data-step="2">
+                <div class="step-icon">📦</div>
+                <h3>Three Powerful Products</h3>
+                <p>Choose the right tool for your needs:</p>
+                <div class="feature-highlights">
+                    <div class="feature-item">
+                        <strong>📊 Marketing</strong>
+                        <p style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">Analyze prospects, generate personalized outreach messages, and find similar prospects</p>
+                    </div>
+                    <div class="feature-item">
+                        <strong>✍️ Content Copilot</strong>
+                        <p style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">Get content inspiration, generate LinkedIn posts, and build your content library</p>
+                    </div>
+                    <div class="feature-item">
+                        <strong>💼 Job Application</strong>
+                        <p style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">Optimize your CV for LinkedIn jobs, get match scores, and AI-powered suggestions</p>
+                    </div>
+                </div>
+                <div class="info-box-onboarding" style="margin-top: 16px;">
+                    <strong>💡 Tip:</strong> Switch between products using the top navigation. Settings are shared across all products.
+                </div>
+            </div>
+
+            <!-- Step 3: Marketing Product -->
+            <div class="onboarding-step" data-step="3">
+                <div class="step-icon">📊</div>
+                <h3>Marketing Product</h3>
+                <p>Perfect for sales outreach and prospect analysis:</p>
+                <div class="step-instructions">
+                    <ol>
+                        <li><strong>Compose Tab:</strong> Set your outreach goal, ICP definition, and seller configuration</li>
+                        <li><strong>Capture Profile:</strong> Click "Capture My Profile" in Settings to enable shared context matching</li>
+                        <li><strong>Analyze Profile:</strong> Navigate to a LinkedIn profile and click "Analyze Profile"</li>
+                        <li><strong>Results Tab:</strong> View fit scores, generated messages, and detailed analysis</li>
+                    </ol>
+                </div>
+                <div class="info-box-onboarding">
+                    <strong>🎯 Key Features:</strong> Fit scoring, shared context matching, personalized messages, related prospects discovery
+                </div>
+            </div>
+
+            <!-- Step 4: Content Copilot -->
+            <div class="onboarding-step" data-step="4">
+                <div class="step-icon">✍️</div>
+                <h3>Content Copilot</h3>
+                <p>Create engaging LinkedIn content that builds your brand:</p>
+                <div class="step-instructions">
+                    <ol>
+                        <li><strong>Inspire Tab:</strong> Analyze any LinkedIn profile to get content ideas and writing style insights</li>
+                        <li><strong>Create Tab:</strong> Generate content using AI suggestions or your custom topics</li>
+                        <li><strong>Results Tab:</strong> View generated content and access your content library</li>
+                    </ol>
+                </div>
+                <div class="info-box-onboarding">
+                    <strong>💡 Pro Tips:</strong> Add custom topics to influence AI suggestions. Analyze successful profiles to learn their style. Save analyses for future reference.
+                </div>
+            </div>
+
+            <!-- Step 5: Job Application Assistant -->
+            <div class="onboarding-step" data-step="5">
+                <div class="step-icon">💼</div>
+                <h3>Job Application Assistant</h3>
+                <p>Optimize your CV for LinkedIn job applications with AI-powered analysis:</p>
+                <div class="step-instructions">
+                    <ol>
+                        <li><strong>Analyze Job:</strong> Navigate to any LinkedIn job posting and click "Analyze Job" to extract job details</li>
+                        <li><strong>Select CV Source:</strong> Use your captured LinkedIn profile or upload a CV file (PDF, DOCX, or TXT)</li>
+                        <li><strong>Get Analysis:</strong> Automatically receive match score, strengths, missing skills, and improvement suggestions</li>
+                        <li><strong>Review Suggestions:</strong> View detailed, actionable suggestions with examples to optimize your CV</li>
+                        <li><strong>Track Applications:</strong> View your job application history in the Results tab</li>
+                    </ol>
+                </div>
+                <div class="info-box-onboarding">
+                    <strong>🎯 Key Features:</strong> Match scoring (0-100%), AI-powered CV analysis, structured CV parsing, detailed improvement suggestions with examples, application tracking
+                </div>
+            </div>
+
+            <!-- Step 6: Setup Profile -->
+            <div class="onboarding-step" data-step="6">
+                <div class="step-icon">👤</div>
+                <h3>Capture Your Profile</h3>
+                <p>To enable "Shared Context" matching and better content personalization, capture your LinkedIn profile:</p>
+                <ol class="step-instructions">
+                    <li>Go to the <strong>Settings</strong> tab (accessible from any product)</li>
+                    <li>Navigate to your own LinkedIn profile page</li>
+                    <li>Click <strong>"Capture My Profile"</strong></li>
+                    <li>Wait for the analysis to complete</li>
+                </ol>
+                <div class="info-box-onboarding">
+                    <strong>💡 Why this matters:</strong> Enables shared context matching in Marketing and better content personalization in Content Copilot.
+                </div>
+            </div>
+
+            <!-- Step 7: Configure Goals -->
+            <div class="onboarding-step" data-step="7">
+                <div class="step-icon">🎯</div>
+                <h3>Configure Your Goals</h3>
+                <p>Set up your outreach strategy in Marketing → Compose tab:</p>
+                <ol class="step-instructions">
+                    <li><strong>Outreach Goal:</strong> What you want to achieve (e.g., "Sell enterprise SEO services")</li>
+                    <li><strong>ICP Definition:</strong> Your ideal customer profile (e.g., "B2B SaaS, 50-200 employees")</li>
+                    <li><strong>Seller Configuration:</strong> What you sell and proof points</li>
+                    <li><strong>Strategy:</strong> Choose risk level (Safe/Contextual/Risky) and offer type</li>
+                </ol>
+                <div class="info-box-onboarding">
+                    <strong>💡 Tip:</strong> These settings are also used by Content Copilot to generate more relevant content topics.
+                </div>
+            </div>
+
+            <!-- Step 8: Content Copilot Features -->
+            <div class="onboarding-step" data-step="8">
+                <div class="step-icon">💡</div>
+                <h3>Content Copilot Features</h3>
+                <p>Discover powerful content creation tools:</p>
+                <ol class="step-instructions">
+                    <li><strong>Inspire Tab:</strong> Analyze any LinkedIn profile to learn their writing style and get topic ideas</li>
+                    <li><strong>Custom Topics:</strong> Add your own topic ideas to influence AI suggestions</li>
+                    <li><strong>Create Tab:</strong> Generate posts, articles, carousels, or video scripts</li>
+                    <li><strong>Results Tab:</strong> View generated content and access your content library</li>
+                </ol>
+                <div class="info-box-onboarding">
+                    <strong>💡 Pro Tip:</strong> Analyze successful creators' profiles to learn what works. Their topics and style will influence your content suggestions.
+                </div>
+            </div>
+
+            <!-- Step 9: Ready to Start -->
+            <div class="onboarding-step" data-step="9">
+                <div class="step-icon">🎉</div>
+                <h3>You're All Set!</h3>
+                <p>You now know the basics. Here are some quick tips:</p>
+                <div class="tips-grid">
+                    <div class="tip-item">
+                        <strong>📊 Marketing</strong>
+                        <p>Analyze prospects, get fit scores, and generate personalized messages</p>
+                    </div>
+                    <div class="tip-item">
+                        <strong>✍️ Content Copilot</strong>
+                        <p>Get inspiration, generate content, and build your content library</p>
+                    </div>
+                    <div class="tip-item">
+                        <strong>💼 Job Application</strong>
+                        <p>Optimize your CV for jobs, get match scores, and AI suggestions</p>
+                    </div>
+                    <div class="tip-item">
+                        <strong>🔄 Regenerate</strong>
+                        <p>Try different approaches without re-analyzing or re-generating</p>
+                    </div>
+                    <div class="tip-item">
+                        <strong>📚 Documentation</strong>
+                        <p>Access full documentation from Settings → Help & Documentation</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="onboarding-footer">
+            <div class="step-indicators">
+                <span class="step-dot active" data-step="1"></span>
+                <span class="step-dot" data-step="2"></span>
+                <span class="step-dot" data-step="3"></span>
+                <span class="step-dot" data-step="4"></span>
+                <span class="step-dot" data-step="5"></span>
+                <span class="step-dot" data-step="6"></span>
+                <span class="step-dot" data-step="7"></span>
+                <span class="step-dot" data-step="8"></span>
+                <span class="step-dot" data-step="9"></span>
+            </div>
+            <div class="onboarding-actions">
+                <button id="onboardingPrev" class="secondary-btn" style="display: none;">Previous</button>
+                <button id="onboardingNext" class="primary-btn">Next</button>
+                <button id="onboardingSkip" class="secondary-btn" style="display: none;">Skip Tutorial</button>
+                <button id="onboardingStart" class="primary-btn" style="display: none;">Get Started</button>
+            </div>
+        </div>
+    </div>
+</div>
+
