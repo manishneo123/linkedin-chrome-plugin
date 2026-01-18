@@ -5,33 +5,53 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log('LinkedIn Sales Copilot installed');
 });
 
-// Open side panel when extension icon is clicked
+// Open side panel when extension icon is clicked (on any page)
 chrome.action.onClicked.addListener(async (tab) => {
-    // Only open side panel on LinkedIn pages
-    if (tab.url && (tab.url.includes('linkedin.com'))) {
-        try {
-            await chrome.sidePanel.open({ tabId: tab.id });
-        } catch (e) {
-            console.error('Error opening side panel:', e);
-            // Fallback: open as popup if side panel not available
-            chrome.action.setPopup({ popup: 'popup/popup.html' });
+    try {
+        // Check if tab ID is valid
+        if (!tab || !tab.id) {
+            console.error('Invalid tab:', tab);
+            return;
         }
+
+        // Check if side panel API is available
+        if (!chrome.sidePanel) {
+            console.error('Side panel API not available');
+            return;
+        }
+
+        // Skip special Chrome pages where side panel might not work
+        if (tab.url && (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://'))) {
+            console.log('Side panel not available on Chrome internal pages');
+            return;
+        }
+
+        // Open the side panel immediately (must be called directly in response to user gesture)
+        // The side panel should already be configured via onUpdated listener or global default
+        await chrome.sidePanel.open({ tabId: tab.id });
+        console.log('Side panel opened successfully for tab:', tab.id);
+    } catch (e) {
+        console.error('Error opening side panel:', e);
+        console.error('Error details:', {
+            message: e.message,
+            name: e.name,
+            tabId: tab?.id,
+            tabUrl: tab?.url
+        });
     }
 });
 
-// Set side panel for LinkedIn tabs automatically
+// Set side panel for all tabs automatically (makes it available everywhere)
 chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
-    if (tab.url && tab.url.includes('linkedin.com')) {
-        if (info.status === 'complete') {
-            try {
-                await chrome.sidePanel.setOptions({
-                    tabId: tabId,
-                    path: 'popup/popup.html',
-                    enabled: true
-                });
-            } catch (e) {
-                console.log('Side panel API not available:', e);
-            }
+    if (info.status === 'complete') {
+        try {
+            await chrome.sidePanel.setOptions({
+                tabId: tabId,
+                path: 'popup/popup.html',
+                enabled: true
+            });
+        } catch (e) {
+            console.log('Side panel API not available:', e);
         }
     }
 });

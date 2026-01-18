@@ -4353,6 +4353,31 @@ Return ONLY a JSON object with this structure:
         }
     }
     
+    // Update the most recent content in library with image URL
+    async function updateContentLibraryWithImage(imageUrl) {
+        try {
+            // Get current library
+            const stored = await chrome.storage.local.get('content_library');
+            const library = stored.content_library || [];
+            
+            if (library.length > 0) {
+                // Update the most recent content (first item) with image URL
+                const mostRecentContent = library[0];
+                if (mostRecentContent) {
+                    mostRecentContent.imageUrl = imageUrl;
+                    library[0] = mostRecentContent;
+                    await chrome.storage.local.set({ content_library: library });
+                    log("[ContentLib] ✓ Updated most recent content with image URL");
+                    
+                    // Reload the library display to show the image
+                    await loadContentLibrary();
+                }
+            }
+        } catch (error) {
+            log(`[ContentLib] Error updating with image: ${error.message}`);
+        }
+    }
+    
     // Load content library
     async function loadContentLibrary() {
         try {
@@ -4371,7 +4396,7 @@ Return ONLY a JSON object with this structure:
                 const date = new Date(item.timestamp);
                 const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const preview = item.content.substring(0, 150) + (item.content.length > 150 ? '...' : '');
-                const hasImage = item.imageUrl && item.imageUrl !== '';
+                const hasImage = (item.imageUrl && item.imageUrl !== '') || (item.image_url && item.image_url !== '');
                 
                 html += `
                     <div class="content-library-item" data-index="${index}">
@@ -4381,7 +4406,7 @@ Return ONLY a JSON object with this structure:
                         </div>
                         ${hasImage ? `
                             <div style="margin-bottom: 12px;">
-                                <img src="${item.imageUrl}" alt="Content image" style="width: 100%; max-width: 400px; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer;" />
+                                <img src="${item.imageUrl || item.image_url}" alt="Content image" style="width: 100%; max-width: 400px; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer;" onerror="this.style.display='none';" />
                                 <small class="settings-hint" style="display: block; margin-top: 4px;">Right-click to save image</small>
                             </div>
                         ` : ''}
@@ -4399,8 +4424,14 @@ Return ONLY a JSON object with this structure:
             // Add event listeners
             contentLibrary.querySelectorAll('.view-content-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const index = parseInt(e.target.dataset.index);
-                    viewContentFromLibrary(library[index]);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const index = parseInt(btn.dataset.index || e.currentTarget.dataset.index);
+                    if (!isNaN(index) && library[index]) {
+                        viewContentFromLibrary(library[index]);
+                    } else {
+                        log(`[ContentLib] Invalid index: ${index}`);
+                    }
                 });
             });
             
@@ -4436,10 +4467,11 @@ Return ONLY a JSON object with this structure:
         if (contentWordCount) contentWordCount.textContent = wordCount.toLocaleString();
         if (contentReadTime) contentReadTime.textContent = `${readTime} min`;
         
-        // Show image if available
-        if (item.imageUrl && item.imageUrl !== '') {
+        // Show image if available (check both property names)
+        const imageUrl = item.imageUrl || item.image_url;
+        if (imageUrl && imageUrl !== '') {
             if (generatedImage) {
-                generatedImage.src = item.imageUrl;
+                generatedImage.src = imageUrl;
             }
             if (articleImageSection) {
                 articleImageSection.classList.remove('hidden');
@@ -4472,15 +4504,13 @@ Return ONLY a JSON object with this structure:
             contentStrategyTips.innerHTML = tipsHtml || '<p>No additional tips available.</p>';
         }
         
-        // Show content section
+        // Show content section (stays in History tab)
         if (generatedContentSection) {
             generatedContentSection.classList.remove('hidden');
         }
         
-        // Navigate to Create tab to view the content
-        if (currentProduct === 'content') {
-            showTab('tab-create');
-        }
+        // Don't navigate away - stay in History tab where the library is
+        // The content will be displayed in the History tab itself
         
         // Scroll to content after a brief delay to ensure DOM is updated
         setTimeout(() => {
@@ -4488,7 +4518,6 @@ Return ONLY a JSON object with this structure:
                 generatedContentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }, 100);
-        generatedContentSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     
     // Load stored content analyses
@@ -4824,6 +4853,9 @@ The image should be:
             if (imageGenerationStatus) {
                 imageGenerationStatus.classList.add('hidden');
             }
+            
+            // Update the most recent content in library with the image URL
+            await updateContentLibraryWithImage(imageUrl);
             
             log("[ImageGen] ✓ Image generated successfully");
             
