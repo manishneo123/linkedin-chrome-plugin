@@ -1,6 +1,13 @@
 {
   "manifest_version": 3,
   "name": "AI Copilot for LinkedIn",
+  "icons": {
+    "16": "images/icon16.png",
+    "24": "images/icon24.png",
+    "32": "images/icon32.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
   "version": "2.0",
   "description": "AI-powered LinkedIn assistant for sales outreach, content creation & job applications. Get 200K free credits!",
   "permissions": [
@@ -21,7 +28,12 @@
     "https://linkedin.com/*"
   ],
   "action": {
-    "default_title": "AI LinkedIn Copilot"
+    "default_title": "AI LinkedIn Copilot",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "24": "images/icon24.png",
+      "32": "images/icon32.png"
+    }
   },
   "side_panel": {
     "default_path": "popup/popup.html"

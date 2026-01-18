@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-
+    <link rel="icon" href="../images/icon32.png" />
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -86,7 +86,8 @@
                                 <option value="Pilot">Pilot</option>
                                 <option value="Workshop">Workshop</option>
                                 <option value="Chat">Chat</option>
-                                <option value="Advice">Advice</option>
+                                <option value="Seeking Advice">Seeking Advice</option>
+                                <option value="Giving Advice">Giving Advice</option>
                                 <option value="Consultation">Consultation</option>
                                 <option value="Training">Training</option>
                                 <option value="Implementation">Implementation</option>
@@ -242,6 +243,11 @@
                 <div class="info-box" style="margin-top: 16px;">
                     <strong>💡 Tip:</strong> These settings are used to generate content that aligns with your goals and resonates with your target audience. They're separate from Marketing settings.
                 </div>
+
+                <div style="margin-top: 16px;">
+                    <button id="continueToInspireBtn" class="primary-btn">Continue to Inspire →</button>
+                    <small class="settings-hint" style="display: block; margin-top: 8px;">Fill in your Content Goal and Target Audience to continue</small>
+                </div>
             </div>
 
             <!-- TAB: INSPIRE (Content Inspiration) -->
@@ -330,8 +336,8 @@
                     <textarea id="contentTopic" placeholder="E.g., Common mistakes in SEO, Latest trends in SaaS, How to improve conversion rates... (Leave empty for AI to suggest based on your profile and ICP)"></textarea>
                 </div>
 
-                 <!-- Content Type & Topic -->
-                 <div class="content-form-grid">
+                <!-- Content Type & Topic -->
+                <div class="content-form-grid">
                     
                     <section class="input-group">
                         <label for="contentType">Content Type</label>
@@ -353,9 +359,9 @@
                             <option value="thought-leadership">Thought Leadership</option>
                             <option value="personal">Personal Story</option>
                         </select>
-                </section>
+                    </section>
                     
-                </div>
+                    </div>
 
                 <!-- Strategy Options -->
                 <details class="config-card">
@@ -537,6 +543,33 @@
                                 <strong>Estimated Read Time:</strong> <span id="contentReadTime">0 min</span>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Article Image Generation Section -->
+                    <div id="articleImageSection" class="content-result-card hidden" style="margin-top: 16px;">
+                        <div class="content-result-header">
+                            <h3>📸 Article Image</h3>
+                            <div class="content-actions">
+                                <button id="generateImageBtn" class="secondary-btn" style="font-size: 12px; padding: 6px 12px;">🎨 Generate Image</button>
+                            </div>
+                        </div>
+                        <div id="imageGenerationStatus" class="hidden" style="padding: 16px; text-align: center; color: var(--text-secondary);">
+                            <div style="display: inline-block; width: 20px; height: 20px; border: 3px solid var(--accent-color); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;"></div>
+                            <span id="imageGenerationStatusText">Generating image...</span>
+                        </div>
+                        <div id="generatedImageContainer" class="hidden" style="margin-top: 12px;">
+                            <img id="generatedImage" src="" alt="Generated article image" style="width: 100%; max-width: 600px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer;" />
+                            <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center;">
+                                <button id="regenerateImageBtn" class="secondary-btn" style="font-size: 12px; padding: 6px 12px;">🔄 Regenerate</button>
+                            </div>
+                            <div class="info-box" style="margin-top: 12px; padding: 12px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px;">
+                                <strong>💡 How to Download:</strong>
+                                <p style="margin: 8px 0 0 0; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                                    Right-click on the image above and select "Save image as..." to download it to your computer.
+                                </p>
+                            </div>
+                        </div>
+                        <small class="settings-hint" style="display: block; margin-top: 8px;">Generate a professional image for your LinkedIn article or post</small>
                     </div>
 
                     <details class="details-accordion" style="margin-top: 16px;">

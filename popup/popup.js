@@ -65,6 +65,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const contentReadTime = document.getElementById('contentReadTime');
     const contentStrategyTips = document.getElementById('contentStrategyTips');
     const contentLibrary = document.getElementById('contentLibrary');
+    
+    // Image generation elements
+    const articleImageSection = document.getElementById('articleImageSection');
+    const generateImageBtn = document.getElementById('generateImageBtn');
+    const imageGenerationStatus = document.getElementById('imageGenerationStatus');
+    const imageGenerationStatusText = document.getElementById('imageGenerationStatusText');
+    const generatedImageContainer = document.getElementById('generatedImageContainer');
+    const generatedImage = document.getElementById('generatedImage');
+    const downloadImageBtn = document.getElementById('downloadImageBtn');
+    const regenerateImageBtn = document.getElementById('regenerateImageBtn');
     const storedAnalysesList = document.getElementById('storedAnalysesList');
     
     // Content analysis elements
@@ -83,6 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const newCustomTopicInput = document.getElementById('newCustomTopicInput');
     const saveCustomTopicBtn = document.getElementById('saveCustomTopicBtn');
     const cancelCustomTopicBtn = document.getElementById('cancelCustomTopicBtn');
+    const continueToInspireBtn = document.getElementById('continueToInspireBtn');
     
     // Store analyzed content references
     let analyzedContentReferences = null;
@@ -1055,6 +1066,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadCustomTopics();
         } else if (targetId === 'tab-job-results') {
             loadJobApplicationsLibrary();
+        } else if (targetId === 'tab-content-setup') {
+            // Check button state when Setup tab is shown
+            setTimeout(updateContinueButtonState, 100);
         }
     }
 
@@ -4224,6 +4238,18 @@ Return ONLY a JSON object with this structure:
                 generatedContentSection.classList.remove('hidden');
             }
             
+            // Show image section for articles and posts
+            const currentContentType = contentTypeSelect?.value || 'post';
+            if (articleImageSection && (currentContentType === 'article' || currentContentType === 'post')) {
+                articleImageSection.classList.remove('hidden');
+                // Reset image state
+                if (generatedImageContainer) generatedImageContainer.classList.add('hidden');
+                if (imageGenerationStatus) imageGenerationStatus.classList.add('hidden');
+            }
+            
+            // Get image URL if image was generated
+            const imageUrl = generatedImage?.src || '';
+            
             // Save to library
             await saveContentToLibrary({
                 type: contentType,
@@ -4234,11 +4260,17 @@ Return ONLY a JSON object with this structure:
                 strategy: parsed.strategy || '',
                 tips: parsed.tips || [],
                 hashtags: parsed.hashtags || [],
+                imageUrl: imageUrl, // Save image URL if available
                 timestamp: new Date().toISOString()
             });
             
             // Load library
             await loadContentLibrary();
+            
+            // Navigate to History tab to see the generated content
+            if (currentProduct === 'content') {
+                showTab('tab-results-content');
+            }
             
             if (contentStatusBadge) {
                 contentStatusBadge.textContent = 'Complete!';
@@ -4286,6 +4318,7 @@ Return ONLY a JSON object with this structure:
                         strategy: contentData.strategy || '',
                         tips: contentData.tips || [],
                         hashtags: contentData.hashtags || [],
+                        imageUrl: contentData.imageUrl || '', // Save image URL
                         metadata: {
                             charCount: contentData.content.length,
                             wordCount: contentData.content.split(/\s+/).filter(w => w.length > 0).length,
@@ -4338,6 +4371,7 @@ Return ONLY a JSON object with this structure:
                 const date = new Date(item.timestamp);
                 const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const preview = item.content.substring(0, 150) + (item.content.length > 150 ? '...' : '');
+                const hasImage = item.imageUrl && item.imageUrl !== '';
                 
                 html += `
                     <div class="content-library-item" data-index="${index}">
@@ -4345,6 +4379,12 @@ Return ONLY a JSON object with this structure:
                             <div class="content-library-item-title">${item.type.charAt(0).toUpperCase() + item.type.slice(1)} - ${item.topic || 'General'}</div>
                             <div class="content-library-item-date">${dateStr}</div>
                         </div>
+                        ${hasImage ? `
+                            <div style="margin-bottom: 12px;">
+                                <img src="${item.imageUrl}" alt="Content image" style="width: 100%; max-width: 400px; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer;" />
+                                <small class="settings-hint" style="display: block; margin-top: 4px;">Right-click to save image</small>
+                            </div>
+                        ` : ''}
                         <div class="content-library-item-preview">${preview}</div>
                         <div class="content-library-item-actions">
                             <button class="secondary-btn view-content-btn" data-index="${index}">View</button>
@@ -4396,6 +4436,24 @@ Return ONLY a JSON object with this structure:
         if (contentWordCount) contentWordCount.textContent = wordCount.toLocaleString();
         if (contentReadTime) contentReadTime.textContent = `${readTime} min`;
         
+        // Show image if available
+        if (item.imageUrl && item.imageUrl !== '') {
+            if (generatedImage) {
+                generatedImage.src = item.imageUrl;
+            }
+            if (articleImageSection) {
+                articleImageSection.classList.remove('hidden');
+            }
+            if (generatedImageContainer) {
+                generatedImageContainer.classList.remove('hidden');
+            }
+        } else {
+            // Hide image section if no image
+            if (generatedImageContainer) {
+                generatedImageContainer.classList.add('hidden');
+            }
+        }
+        
         if (contentStrategyTips) {
             let tipsHtml = '';
             if (item.strategy) {
@@ -4414,11 +4472,22 @@ Return ONLY a JSON object with this structure:
             contentStrategyTips.innerHTML = tipsHtml || '<p>No additional tips available.</p>';
         }
         
+        // Show content section
         if (generatedContentSection) {
             generatedContentSection.classList.remove('hidden');
         }
         
-        // Scroll to content
+        // Navigate to Create tab to view the content
+        if (currentProduct === 'content') {
+            showTab('tab-create');
+        }
+        
+        // Scroll to content after a brief delay to ensure DOM is updated
+        setTimeout(() => {
+            if (generatedContentSection) {
+                generatedContentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
         generatedContentSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     
@@ -4657,6 +4726,157 @@ Return ONLY a JSON object with this structure:
         regenerateContentBtn.addEventListener('click', generateLinkedInContent);
     }
     
+    // Image generation function
+    async function generateArticleImage() {
+        if (!generateImageBtn || !generatedContentText) return;
+        
+        const content = generatedContentText.textContent || '';
+        if (!content) {
+            alert('Please generate content first before creating an image.');
+            return;
+        }
+        
+        // Disable button
+        generateImageBtn.disabled = true;
+        generateImageBtn.style.opacity = '0.6';
+        generateImageBtn.style.cursor = 'not-allowed';
+        const originalText = generateImageBtn.textContent;
+        generateImageBtn.textContent = 'Generating...';
+        
+        // Show status
+        if (imageGenerationStatus) {
+            imageGenerationStatus.classList.remove('hidden');
+            if (imageGenerationStatusText) {
+                imageGenerationStatusText.textContent = 'Generating image based on your content...';
+            }
+        }
+        
+        // Hide previous image
+        if (generatedImageContainer) {
+            generatedImageContainer.classList.add('hidden');
+        }
+        
+        try {
+            // Get content topic and title for better image prompt
+            const contentTopic = contentTopicInput?.value.trim() || '';
+            const imgContentType = contentTypeSelect?.value || 'post';
+            
+            // Create a prompt for image generation based on content
+            const imagePrompt = `Create a professional, LinkedIn-appropriate image for a ${imgContentType} about: ${contentTopic || 'the following content'}. 
+            
+Content summary: ${content.substring(0, 500)}...
+
+The image should be:
+- Professional and business-appropriate
+- Visually appealing and modern
+- Suitable for LinkedIn (no text overlays, clean design)
+- Relevant to the content theme
+- High quality and engaging`;
+
+            // Check if using backend credits
+            const useBackend = useBackendCreditsCheckbox.checked;
+            const apiKey = useBackend ? null : apiKeyInput.value.trim();
+            
+            if (!useBackend && !apiKey) {
+                alert('Please configure your API key in Settings or enable Backend Credits');
+                return;
+            }
+            
+            log("[ImageGen] Generating image...");
+            
+            const currentUserId = await getUserId();
+            
+            // Call backend API for image generation
+            const response = await fetch(`${BACKEND_URL}/api/generate-image`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': useBackend ? await getApiKey() : apiKey
+                },
+                body: JSON.stringify({
+                    prompt: imagePrompt,
+                    size: '1024x1024',
+                    model: 'dall-e-3'
+                })
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Image generation failed');
+            }
+            
+            const data = await response.json();
+            const imageUrl = data.imageUrl || data.url;
+            
+            if (!imageUrl) {
+                throw new Error('No image URL returned from API');
+            }
+            
+            // Display the image
+            if (generatedImage) {
+                generatedImage.src = imageUrl;
+            }
+            
+            if (generatedImageContainer) {
+                generatedImageContainer.classList.remove('hidden');
+            }
+            
+            if (imageGenerationStatus) {
+                imageGenerationStatus.classList.add('hidden');
+            }
+            
+            log("[ImageGen] ✓ Image generated successfully");
+            
+        } catch (e) {
+            alert('Failed to generate image: ' + e.message);
+            log(`[ImageGen] Error: ${e.message}`);
+            if (imageGenerationStatus) {
+                imageGenerationStatus.classList.add('hidden');
+            }
+        } finally {
+            // Re-enable button
+            if (generateImageBtn) {
+                generateImageBtn.disabled = false;
+                generateImageBtn.style.opacity = '1';
+                generateImageBtn.style.cursor = 'pointer';
+                generateImageBtn.textContent = originalText;
+            }
+        }
+    }
+    
+    // Event listeners for image generation
+    if (generateImageBtn) {
+        generateImageBtn.addEventListener('click', generateArticleImage);
+    }
+    
+    if (regenerateImageBtn) {
+        regenerateImageBtn.addEventListener('click', generateArticleImage);
+    }
+    
+    if (downloadImageBtn) {
+        downloadImageBtn.addEventListener('click', async () => {
+            const imageUrl = generatedImage?.src;
+            if (imageUrl && imageUrl !== '') {
+                try {
+                    const response = await fetch(imageUrl);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `linkedin-article-image-${Date.now()}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    log("[ImageGen] Image downloaded successfully");
+                } catch (error) {
+                    alert('Failed to download image: ' + error.message);
+                    log(`[ImageGen] Download error: ${error.message}`);
+                }
+            }
+        });
+    }
+    
     // Event listeners for content analysis
     if (analyzeProfileContentBtn) {
         analyzeProfileContentBtn.addEventListener('click', analyzeProfileContentForInspiration);
@@ -4818,8 +5038,49 @@ Return ONLY a JSON object with this structure:
                     const topicsList = analyzedContentReferences.topics.slice(0, 5).join(', ');
                     contentTopicInput.value = topicsList;
                 }
+                // Navigate to Create tab
+                showTab('tab-create');
             }
         });
+    }
+    
+    // Function to check if mandatory fields are filled
+    function checkSetupFieldsFilled() {
+        const contentGoal = contentGoalInput?.value.trim() || '';
+        const contentIcp = contentIcpInput?.value.trim() || '';
+        return contentGoal.length > 0 && contentIcp.length > 0;
+    }
+
+    // Update button state based on field completion
+    function updateContinueButtonState() {
+        if (continueToInspireBtn) {
+            const isFilled = checkSetupFieldsFilled();
+            continueToInspireBtn.disabled = !isFilled;
+            continueToInspireBtn.style.opacity = isFilled ? '1' : '0.6';
+            continueToInspireBtn.style.cursor = isFilled ? 'pointer' : 'not-allowed';
+        }
+    }
+
+    // Event listener for continue button
+    if (continueToInspireBtn) {
+        continueToInspireBtn.addEventListener('click', () => {
+            if (checkSetupFieldsFilled()) {
+                showTab('tab-inspire');
+            } else {
+                alert('Please fill in Content Goal and Target Audience before continuing.');
+            }
+        });
+    }
+
+    // Add event listeners to update button state when fields change
+    if (contentGoalInput) {
+        contentGoalInput.addEventListener('input', updateContinueButtonState);
+        contentGoalInput.addEventListener('blur', updateContinueButtonState);
+    }
+
+    if (contentIcpInput) {
+        contentIcpInput.addEventListener('input', updateContinueButtonState);
+        contentIcpInput.addEventListener('blur', updateContinueButtonState);
     }
     
     // === Job Application Functionality ===
@@ -4901,8 +5162,14 @@ Return ONLY a JSON object with this structure:
             const file = e.target.files[0];
             if (file) {
                 if (cvFileName) {
-                    cvFileName.textContent = `Selected: ${file.name} (Processing...)`;
-                    cvFileName.style.color = 'var(--text-secondary)';
+                    cvFileName.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            <div style="width: 14px; height: 14px; border: 2px solid var(--accent-color); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;"></div>
+                            <span style="font-size: 13px; font-weight: 600; color: var(--accent-color);">Processing ${file.name}...</span>
+                        </div>
+                    `;
+                    cvFileName.style.color = '';
+                    cvFileName.style.fontSize = '';
                 }
                 log(`[CV] File selected: ${file.name}`);
                 
@@ -4953,11 +5220,15 @@ Return ONLY a JSON object with this structure:
                     
                     log(`[CV] File processed successfully: ${result.characterCount} chars, ${result.wordCount} words`);
                     if (cvFileName) {
-                        const statusText = result.structured 
-                            ? `Selected: ${result.fileName} (✓ ${result.wordCount} words, structured)`
-                            : `Selected: ${result.fileName} (✓ ${result.wordCount} words)`;
-                        cvFileName.textContent = statusText;
-                        cvFileName.style.color = 'var(--accent-color)';
+                        cvFileName.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                <span style="color: #10b981; font-size: 14px;">✓</span>
+                                <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${result.fileName}</span>
+                                <span style="font-size: 12px; color: var(--text-secondary);">(${result.wordCount} words${result.structured ? ', structured' : ''})</span>
+                            </div>
+                        `;
+                        cvFileName.style.color = '';
+                        cvFileName.style.fontSize = '';
                     }
                     
                     // Check if ready to proceed
@@ -4972,14 +5243,20 @@ Return ONLY a JSON object with this structure:
                             await analyzeCvAgainstJob();
                         }, 300);
                     }
-                } catch (error) {
-                    log(`[CV] Error processing file: ${error.message}`);
-                    if (cvFileName) {
-                        cvFileName.textContent = `Error: ${error.message}`;
-                        cvFileName.style.color = '#ef4444';
+                    } catch (error) {
+                        log(`[CV] Error processing file: ${error.message}`);
+                        if (cvFileName) {
+                            cvFileName.innerHTML = `
+                                <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                    <span style="color: #ef4444; font-size: 14px;">✗</span>
+                                    <span style="font-size: 13px; font-weight: 600; color: #ef4444;">Error: ${error.message}</span>
+                                </div>
+                            `;
+                            cvFileName.style.color = '';
+                            cvFileName.style.fontSize = '';
+                        }
+                        alert('Failed to process file: ' + error.message);
                     }
-                    alert('Failed to process file: ' + error.message);
-                }
             }
         });
     }
