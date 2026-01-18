@@ -8,7 +8,7 @@
     "48": "images/icon48.png",
     "128": "images/icon128.png"
   },
-  "version": "2.0",
+  "version": "3.0",
   "description": "AI-powered LinkedIn assistant for sales outreach, content creation & job applications. Get 200K free credits!",
   "permissions": [
     "activeTab",
