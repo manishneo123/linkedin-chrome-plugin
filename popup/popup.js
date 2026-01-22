@@ -226,8 +226,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     log("Extension loaded. Initializing...");
 
     // === Backend Configuration ===
-    //const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
-    const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
+    const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
+    //const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
     let userId = null;
     let apiKey = null;
 
@@ -1069,6 +1069,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (targetId === 'tab-content-setup') {
             // Check button state when Setup tab is shown
             setTimeout(updateContinueButtonState, 100);
+        } else if (targetId === 'tab-interview-prep') {
+            updateInterviewPrerequisites();
+            // Try to load existing questions if job is analyzed
+            if (currentJobData) {
+                let jobAnalysisId = currentJobData.jobAnalysisId;
+                if (!jobAnalysisId && currentJobData.jobUrl) {
+                    // Will be loaded asynchronously
+                    setTimeout(async () => {
+                        const currentApiKey = await getApiKey();
+                        if (currentApiKey) {
+                            try {
+                                const jobResponse = await fetch(`${BACKEND_URL}/api/job-analyses?jobUrl=${encodeURIComponent(currentJobData.jobUrl)}`, {
+                                    headers: { 'x-api-key': currentApiKey }
+                                });
+                                if (jobResponse.ok) {
+                                    const jobData = await jobResponse.json();
+                                    if (jobData.analyses && jobData.analyses.length > 0) {
+                                        jobAnalysisId = jobData.analyses[0].job_analysis_id;
+                                        await loadInterviewQuestions(jobAnalysisId);
+                                    }
+                                }
+                            } catch (e) {
+                                // Ignore
+                            }
+                        }
+                    }, 100);
+                } else if (jobAnalysisId) {
+                    loadInterviewQuestions(jobAnalysisId);
+                }
+            }
         }
     }
 
@@ -5242,6 +5272,7 @@ The image should be:
                         content: result.content,
                         structured: result.structured || null // Store structured CV object
                     };
+                    updateInterviewPrerequisites();
                     
                     // Store structured CV separately for easy access
                     if (result.structured) {
@@ -5486,21 +5517,27 @@ Be thorough and extract all available information. If a field is not mentioned, 
                     })
                 });
                 
+                let savedJobAnalysisId = null;
                 if (!saveResponse.ok) {
                     const errorData = await saveResponse.json();
                     log(`[Job] ⚠ Failed to save to database: ${errorData.error}`);
                     // Continue even if save fails
                 } else {
                     const saveData = await saveResponse.json();
-                    log(`[Job] ✓ Saved to database: ${saveData.jobAnalysisId}`);
+                    savedJobAnalysisId = saveData.jobAnalysisId;
+                    log(`[Job] ✓ Saved to database: ${savedJobAnalysisId}`);
                 }
                 
                 // Store in currentJobData for use in CV analysis
                 currentJobData = {
                     ...analyzedJobData,
                     jobUrl: rawJobData.jobUrl || tab.url,
-                    rawData: rawJobData
+                    rawData: rawJobData,
+                    jobAnalysisId: savedJobAnalysisId
                 };
+                
+                // Update interview prerequisites
+                updateInterviewPrerequisites();
                 
                 // Display job details
                 if (jobDetailsDisplay) {
@@ -6909,6 +6946,7 @@ Format your response as JSON with the following structure:
                     structured: stored.sender_profile_structured || null
                 };
                 log('[CV] ✓ LinkedIn profile loaded as CV (' + stored.sender_profile_cache.length + ' chars)');
+                updateInterviewPrerequisites();
                 return true;
             } else {
                 log('[CV] ⚠ No LinkedIn profile found in storage. Keys checked: sender_profile_cache');
@@ -6934,6 +6972,314 @@ Format your response as JSON with the following structure:
             await analyzeCvAgainstJob();
         });
     }
+    
+    // Interview Questions Elements
+    const generateInterviewQuestionsBtn = document.getElementById('generateInterviewQuestionsBtn');
+    const interviewQuestionsStatus = document.getElementById('interviewQuestionsStatus');
+    const interviewQuestionsStatusText = document.getElementById('interviewQuestionsStatusText');
+    const interviewQuestionsResults = document.getElementById('interviewQuestionsResults');
+    const jobPrerequisiteInterview = document.getElementById('jobPrerequisiteInterview');
+    const cvPrerequisiteInterview = document.getElementById('cvPrerequisiteInterview');
+    const numberOfQuestionsInput = document.getElementById('numberOfQuestions');
+    const questionDifficultySelect = document.getElementById('questionDifficulty');
+    
+    let currentInterviewQuestions = null;
+    let currentQuestionSetId = null;
+    
+    // Update prerequisites check
+    function updateInterviewPrerequisites() {
+        if (jobPrerequisiteInterview) {
+            if (currentJobData) {
+                jobPrerequisiteInterview.textContent = '✓ Job posting analyzed';
+                jobPrerequisiteInterview.style.color = 'var(--success-color, #28a745)';
+            } else {
+                jobPrerequisiteInterview.textContent = '⚠ Job posting not analyzed';
+                jobPrerequisiteInterview.style.color = 'var(--text-secondary)';
+            }
+        }
+        
+        if (cvPrerequisiteInterview) {
+            if (currentCvData) {
+                cvPrerequisiteInterview.textContent = '✓ CV/Profile loaded';
+                cvPrerequisiteInterview.style.color = 'var(--success-color, #28a745)';
+            } else {
+                cvPrerequisiteInterview.textContent = '⚠ CV/Profile not loaded (optional but recommended)';
+                cvPrerequisiteInterview.style.color = 'var(--text-secondary)';
+            }
+        }
+        
+        if (generateInterviewQuestionsBtn) {
+            generateInterviewQuestionsBtn.disabled = !currentJobData;
+        }
+    }
+    
+    // Generate Interview Questions
+    async function generateInterviewQuestions() {
+        if (!currentJobData) {
+            alert('Please analyze a job posting first');
+            return;
+        }
+        
+        if (!generateInterviewQuestionsBtn || !interviewQuestionsStatus || !interviewQuestionsStatusText) {
+            return;
+        }
+        
+        try {
+            generateInterviewQuestionsBtn.disabled = true;
+            interviewQuestionsStatus.classList.remove('hidden');
+            interviewQuestionsStatusText.textContent = 'Generating personalized interview questions...';
+            interviewQuestionsResults.classList.add('hidden');
+            
+            // Get selected question types
+            const questionTypeCheckboxes = document.querySelectorAll('input[name="questionTypes"]:checked');
+            const questionTypes = Array.from(questionTypeCheckboxes).map(cb => cb.value);
+            
+            if (questionTypes.length === 0) {
+                throw new Error('Please select at least one question type');
+            }
+            
+            const numberOfQuestions = parseInt(numberOfQuestionsInput?.value || 15);
+            const difficultyLevel = questionDifficultySelect?.value || 'mixed';
+            
+            // Get job analysis ID - we need to find it from currentJobData or save it
+            let jobAnalysisId = currentJobData.jobAnalysisId;
+            
+            // If we don't have jobAnalysisId, try to get it from the job URL
+            if (!jobAnalysisId && currentJobData.jobUrl) {
+                const currentApiKey = await getApiKey();
+                if (currentApiKey) {
+                    try {
+                        const jobResponse = await fetch(`${BACKEND_URL}/api/job-analyses?jobUrl=${encodeURIComponent(currentJobData.jobUrl)}`, {
+                            headers: { 'x-api-key': currentApiKey }
+                        });
+                        if (jobResponse.ok) {
+                            const jobData = await jobResponse.json();
+                            if (jobData.analyses && jobData.analyses.length > 0) {
+                                jobAnalysisId = jobData.analyses[0].job_analysis_id;
+                            }
+                        }
+                    } catch (e) {
+                        log('[Interview] Could not fetch job analysis ID: ' + e.message);
+                    }
+                }
+            }
+            
+            if (!jobAnalysisId) {
+                throw new Error('Job analysis not found. Please analyze the job again.');
+            }
+            
+            // Prepare CV data
+            const cvData = currentCvData?.content || null;
+            const cvStructured = currentCvData?.structured || currentCvStructured || null;
+            
+            interviewQuestionsStatusText.textContent = 'Sending request to AI...';
+            
+            const currentApiKey = await getApiKey();
+            if (!currentApiKey) {
+                throw new Error('API key not found. Please set your API key in settings.');
+            }
+            
+            const response = await fetch(`${BACKEND_URL}/api/interview-questions/generate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': currentApiKey
+                },
+                body: JSON.stringify({
+                    jobAnalysisId: jobAnalysisId,
+                    cvData: cvData,
+                    cvStructured: cvStructured,
+                    questionTypes: questionTypes,
+                    numberOfQuestions: numberOfQuestions,
+                    difficultyLevel: difficultyLevel
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to generate interview questions');
+            }
+            
+            const result = await response.json();
+            
+            if (!result.success || !result.questions) {
+                throw new Error('Invalid response from server');
+            }
+            
+            currentInterviewQuestions = result.questions;
+            currentQuestionSetId = result.setId;
+            
+            // Display questions
+            displayInterviewQuestions(result.questions, result.summary, result.creditsUsed);
+            
+            interviewQuestionsStatus.classList.add('hidden');
+            interviewQuestionsResults.classList.remove('hidden');
+            
+            log('[Interview] ✓ Generated ' + result.questions.length + ' interview questions');
+            
+        } catch (error) {
+            log('[Interview] ✗ Error: ' + error.message);
+            alert('Failed to generate interview questions: ' + error.message);
+            interviewQuestionsStatus.classList.add('hidden');
+        } finally {
+            if (generateInterviewQuestionsBtn) {
+                generateInterviewQuestionsBtn.disabled = false;
+            }
+        }
+    }
+    
+    // Display Interview Questions
+    function displayInterviewQuestions(questions, summary, creditsUsed) {
+        if (!interviewQuestionsResults) return;
+        
+        const categoryColors = {
+            'technical': '#0066cc',
+            'behavioral': '#28a745',
+            'company_culture': '#ff6b35',
+            'role_specific': '#9b59b6',
+            'cross_relevant': '#f39c12'
+        };
+        
+        const difficultyColors = {
+            'easy': '#28a745',
+            'medium': '#ffc107',
+            'hard': '#dc3545'
+        };
+        
+        let html = `
+            <div class="content-result-card" style="margin-bottom: 16px;">
+                <div class="content-result-header">
+                    <h3>Generated Interview Questions</h3>
+                    <div class="content-actions">
+                        <button id="regenerateInterviewQuestionsBtn" class="secondary-btn" style="font-size: 12px; padding: 6px 12px;">🔄 Regenerate</button>
+                    </div>
+                </div>
+                <div style="padding: 16px;">
+                    <div style="margin-bottom: 16px; padding: 12px; background: var(--input-bg); border-radius: 6px;">
+                        <strong>Summary:</strong>
+                        <ul style="margin: 8px 0 0 20px;">
+                            <li>Total Questions: ${questions.length}</li>
+                            <li>Categories: ${summary?.categories?.join(', ') || 'N/A'}</li>
+                            ${creditsUsed ? `<li>Credits Used: ${creditsUsed.toLocaleString()}</li>` : ''}
+                        </ul>
+                    </div>
+        `;
+        
+        questions.forEach((q, index) => {
+            const categoryColor = categoryColors[q.category] || '#666';
+            const difficultyColor = difficultyColors[q.difficultyLevel] || '#666';
+            
+            html += `
+                <div class="interview-question-card" style="margin-bottom: 16px;">
+                    <div class="question-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 600; color: var(--text-primary);">Q${index + 1}</span>
+                            <span class="question-category-badge" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: ${categoryColor}20; color: ${categoryColor};">
+                                ${q.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                            <span class="question-difficulty-badge" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: ${difficultyColor}20; color: ${difficultyColor};">
+                                ${q.difficultyLevel ? q.difficultyLevel.charAt(0).toUpperCase() + q.difficultyLevel.slice(1) : 'N/A'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question-text" style="font-size: 14px; line-height: 1.6; color: var(--text-primary); margin-bottom: 12px; padding: 12px; background: var(--bg-primary); border-radius: 6px; border-left: 3px solid ${categoryColor};">
+                        ${q.questionText}
+                    </div>
+                    <details class="question-answer-section" style="margin-bottom: 8px;">
+                        <summary style="cursor: pointer; color: var(--accent-color); font-size: 13px; font-weight: 500; padding: 8px; background: var(--input-bg); border-radius: 4px;">💡 Suggested Answer Framework</summary>
+                        <div class="suggested-answer" style="padding: 12px; margin-top: 8px; background: var(--input-bg); border-radius: 6px; font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
+                            ${q.suggestedAnswer || 'No suggested answer provided.'}
+                        </div>
+                    </details>
+                    ${q.bestAnswer ? `
+                    <details class="question-best-answer-section" style="margin-bottom: 8px;" open>
+                        <summary style="cursor: pointer; color: var(--success-color, #28a745); font-size: 13px; font-weight: 600; padding: 8px; background: rgba(40, 167, 69, 0.1); border-radius: 4px;">⭐ Best Possible Answer</summary>
+                        <div class="best-answer" style="padding: 12px; margin-top: 8px; background: rgba(40, 167, 69, 0.05); border-left: 3px solid var(--success-color, #28a745); border-radius: 6px; font-size: 13px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap;">
+                            ${q.bestAnswer}
+                        </div>
+                    </details>
+                    ` : ''}
+                    <details class="question-tips-section" style="margin-bottom: 8px;">
+                        <summary style="cursor: pointer; color: var(--accent-color); font-size: 13px; font-weight: 500; padding: 8px; background: var(--input-bg); border-radius: 4px;">✨ Tips for Answering</summary>
+                        <div class="question-tips" style="padding: 12px; margin-top: 8px; background: var(--input-bg); border-radius: 6px; font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
+                            ${q.tips || 'No tips provided.'}
+                        </div>
+                    </details>
+                    ${q.relatedSkills && q.relatedSkills.length > 0 ? `
+                        <div class="question-skills" style="margin-top: 8px;">
+                            <strong style="font-size: 12px; color: var(--text-secondary);">Related Skills:</strong>
+                            <div style="margin-top: 4px;">
+                                ${q.relatedSkills.map(skill => `
+                                    <span class="skill-tag" style="display: inline-block; padding: 4px 8px; background: var(--accent-color-light, rgba(10, 102, 194, 0.1)); color: var(--accent-color); border-radius: 4px; font-size: 11px; margin: 4px 4px 0 0;">
+                                        ${skill}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+        
+        interviewQuestionsResults.innerHTML = html;
+        
+        // Add regenerate button listener
+        const regenerateBtn = document.getElementById('regenerateInterviewQuestionsBtn');
+        if (regenerateBtn) {
+            regenerateBtn.addEventListener('click', async () => {
+                if (confirm('Regenerate interview questions? This will create a new set of questions.')) {
+                    await generateInterviewQuestions();
+                }
+            });
+        }
+    }
+    
+    // Load existing interview questions
+    async function loadInterviewQuestions(jobAnalysisId) {
+        if (!jobAnalysisId) return;
+        
+        try {
+            const currentApiKey = await getApiKey();
+            if (!currentApiKey) return;
+            
+            const response = await fetch(`${BACKEND_URL}/api/interview-questions/${jobAnalysisId}`, {
+                headers: { 'x-api-key': currentApiKey }
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.sets && result.sets.length > 0) {
+                    // Load the most recent set
+                    const latestSet = result.sets[0];
+                    currentInterviewQuestions = latestSet.questions;
+                    currentQuestionSetId = latestSet.setId;
+                    displayInterviewQuestions(latestSet.questions, {
+                        categories: latestSet.categoriesIncluded || []
+                    });
+                    interviewQuestionsResults.classList.remove('hidden');
+                }
+            }
+        } catch (error) {
+            log('[Interview] Error loading questions: ' + error.message);
+        }
+    }
+    
+    // Event listeners
+    if (generateInterviewQuestionsBtn) {
+        generateInterviewQuestionsBtn.addEventListener('click', generateInterviewQuestions);
+    }
+    
+    // Update prerequisites when job or CV data changes
+    // We'll call this after job analysis and CV loading
+    const originalAnalyzeJob = analyzeJobBtn?.onclick;
+    
+    // Initialize prerequisites check
+    updateInterviewPrerequisites();
     
     // Initialize: Load LinkedIn profile if available
     (async () => {
