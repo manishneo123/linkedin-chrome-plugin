@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Demo - AI Copilot for LinkedIn",
+  "name": "AI Copilot for LinkedIn",
   "icons": {
     "16": "images/icon16.png",
     "24": "images/icon24.png",
@@ -9,7 +9,7 @@
     "128": "images/icon128.png"
   },
   "version": "4.0",
-  "description": "AI-powered LinkedIn assistant for sales outreach, content creation & job applications. Get 200K free credits!",
+  "description": "AI LinkedIn assistant: sales outreach, create content, write comments on posts & job apps. 200K free credits!",
   "permissions": [
     "activeTab",
     "scripting",

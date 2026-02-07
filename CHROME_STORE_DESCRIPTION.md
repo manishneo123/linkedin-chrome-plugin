@@ -1,7 +1,7 @@
 # Chrome Web Store Listing Description
 
 ## Short Description (132 characters max)
-AI-powered LinkedIn assistant for sales outreach, content creation, and job applications. Get 200K free credits to start!
+AI LinkedIn assistant: sales outreach, create content, write comments on posts & job apps. Get 200K free credits to start!
 
 ## Full Description
 
@@ -31,10 +31,10 @@ Stop spending hours researching prospects manually. AI Sales Copilot analyzes Li
 
 ---
 
-#### ✍️ **Content Copilot** - LinkedIn Content Creation
-Build your personal brand and grow your LinkedIn presence with AI-powered content generation. Get inspiration from successful creators and generate engaging posts, articles, and more.
+#### ✍️ **Content Copilot** - Create Content or Write Comments
+Two clear ways to use Content: **create** LinkedIn content (posts, articles, carousels, scripts) or **write comments** on others’ posts. Build your brand and engage smarter with AI.
 
-**Key Features:**
+**Create content:**
 - **Profile Inspiration**: Analyze any LinkedIn profile to learn writing styles and get topic ideas
 - **AI Content Generation**: Create LinkedIn posts, articles, carousels, video scripts, and polls
 - **Custom Topics**: Add your own topic ideas to influence AI suggestions
@@ -42,7 +42,13 @@ Build your personal brand and grow your LinkedIn presence with AI-powered conten
 - **Multiple Content Types**: Generate short posts, long-form articles, carousel posts, video scripts, and polls
 - **Tone Customization**: Choose from Professional, Friendly, Conversational, or Authoritative tones
 
-**Perfect for:** Content creators, thought leaders, personal brand builders, LinkedIn influencers
+**Write comments:**
+- **Analyze Feed Posts**: On any LinkedIn feed or post page, analyze multiple visible posts in one go
+- **Should You Comment?**: For each post, get a clear yes/no plus a short reason (relevance to your goal & ICP)
+- **Suggested Comments**: AI-drafted comments you can copy and paste—add value without sounding salesy
+- **Uses Your Outreach Profile**: Comment suggestions use your Marketing settings (goal, offer, ICP) so they stay on-brand
+
+**Perfect for:** Content creators, thought leaders, personal brand builders, LinkedIn influencers, and anyone who wants to engage on feed posts with confidence
 
 ---
 
@@ -143,10 +149,12 @@ Need help? Contact us at manish.neo@gmail.com or access full documentation from 
 ### 🔄 What's New
 
 - ✅ Three products in one: Marketing, Content Copilot, and Job Application
+- ✅ **Content: Create content or Write comments**—clear choice; analyze feed posts and get per-post “should you comment?” + suggested comments
 - ✅ 200,000 free credits for new users
-- ✅ Enhanced AI analysis with GPT-5.2
+- ✅ Enhanced AI analysis
 - ✅ Structured CV processing for job applications
 - ✅ Content inspiration from successful creators
+- ✅ Multi-post comment suggestions (feed or single post page)
 - ✅ Application tracking for job seekers
 - ✅ Improved onboarding experience
 

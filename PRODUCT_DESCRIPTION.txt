@@ -3,9 +3,9 @@ AI Sales Copilot for LinkedIn - Product Description
 OVERVIEW
 ========
 
-AI Sales Copilot is an intelligent Chrome extension that transforms LinkedIn outreach from manual research into automated, data-driven sales intelligence. Built with AI technology, the tool analyzes LinkedIn profiles in real-time, extracts comprehensive prospect data, and generates highly personalized outreach messages that dramatically improve response rates.
+AI Sales Copilot is an intelligent Chrome extension that transforms LinkedIn outreach, content, and engagement from manual work into automated, AI-driven intelligence. Built with AI technology, the tool (1) analyzes LinkedIn profiles in real-time, extracts comprehensive prospect data, and generates highly personalized outreach messages; (2) lets you create content (posts, articles, carousels, scripts) or write comments on feed posts with per-post “should you comment?” and suggested comments; (3) supports job applications with job analysis, CV optimization, and interview prep.
 
-The extension serves as a personal sales intelligence assistant, combining AI analysis with deep LinkedIn integration to provide actionable insights, strategic recommendations, and ready-to-send messages tailored to specific sales goals and ideal customer profiles.
+The extension serves as a personal sales and content assistant, combining AI analysis with deep LinkedIn integration to provide actionable insights, strategic recommendations, ready-to-send messages, and comment suggestions tailored to your sales goals and ideal customer profile.
 
 KEY VALUE PROPOSITIONS
 ======================
@@ -70,6 +70,14 @@ Analyzes "People also viewed" profiles to identify similar prospects, score rele
 
 After initial analysis, regenerate messages with different parameters without re-analyzing: change risk level, switch offer types, adjust strategy, fast iteration for A/B testing, cost-effective refinement.
 
+11. CONTENT COPILOT – CREATE CONTENT OR WRITE COMMENTS
+
+The Content product clearly offers two modes:
+
+Create content: Set a content goal and target audience (ICP); get inspiration by analyzing profiles’ posts; generate LinkedIn posts, articles, carousels, video scripts, and polls with tone customization; manage a content library and history.
+
+Write comments: On any LinkedIn feed or post page, analyze multiple visible posts in one go. For each post, get (a) a short summary, (b) whether it makes sense to comment (yes/no) with a reason tied to your outreach goal and ICP, and (c) a suggested comment you can copy. Uses your Marketing Compose settings (goal, offer, ICP) so suggestions stay on-brand. Supports DOM extraction of posts or AI parsing from page text when needed.
+
 HOW IT WORKS
 ============
 
@@ -113,6 +121,8 @@ ENTREPRENEURS & FOUNDERS: Prospect for customers/partners/investors, personalize
 RECRUITERS: Candidate qualification, personalized passive candidate outreach, understand background and fit, build talent relationships, identify referrals.
 
 MARKETING PROFESSIONALS: Influencer outreach, partnership development, content collaboration, speaker identification, community building.
+
+CONTENT CREATORS & ENGAGERS: Create posts, articles, and scripts with AI; or use “Write comments” to analyze feed posts, decide where to comment, and use suggested comments to engage without sounding salesy.
 
 BENEFITS & ROI
 ==============
