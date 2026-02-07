@@ -29,8 +29,17 @@
             <button class="nav-item" data-target="tab-content-setup">Setup</button>
             <button class="nav-item" data-target="tab-inspire">Inspire</button>
             <button class="nav-item" data-target="tab-create">Create</button>
+            <button class="nav-item" data-target="tab-comment">Comment</button>
             <button class="nav-item" data-target="tab-results-content">History</button>
         </nav>
+        <!-- Content mode: clearly define Create content vs Write comments -->
+        <div id="content-mode-bar" class="content-mode-bar hidden">
+            <span class="content-mode-label">What do you want to do?</span>
+            <div class="content-mode-options">
+                <button type="button" class="content-mode-btn" data-target="tab-create">✍️ Create content</button>
+                <button type="button" class="content-mode-btn" data-target="tab-comment">💬 Write comments</button>
+            </div>
+        </div>
 
         <!-- Job Application Product Tabs -->
         <nav class="main-nav jobs-nav hidden" id="jobs-nav">
@@ -692,6 +701,25 @@
                         </div>
                     </div>
                 </details>
+            </div>
+
+            <!-- TAB: COMMENT (Write comments on posts - under Content) -->
+            <div id="tab-comment" class="view hidden">
+                <header class="section-header">
+                    <h2>💬 Write comments</h2>
+                    <p class="section-subtitle">Analyze posts on your feed and get suggestions on whether to comment and what to say.</p>
+                </header>
+                <div class="info-box" style="margin-bottom: 16px;">
+                    <strong>How it works:</strong> Open a LinkedIn feed or post page. The extension reads <em>visible posts</em>, analyzes each one, and uses your Marketing outreach settings (Compose tab) to say whether commenting makes sense and to draft a comment per post.
+                </div>
+                <div class="button-group-with-status">
+                    <button id="analyzePostCommentBtn" class="primary-btn">Analyze posts & suggest comments</button>
+                    <div class="status-badge" id="postCommentStatusBadge">Ready</div>
+                </div>
+                <div id="postCommentResults" class="hidden" style="margin-top: 20px;">
+                    <div id="postCommentResultsList" class="post-comment-results-list"></div>
+                </div>
+                <div id="postCommentEmpty" class="empty-state" style="margin-top: 16px;">Run analysis to see for each post whether commenting makes sense and get suggested comments.</div>
             </div>
 
             <!-- TAB 4: SETTINGS -->

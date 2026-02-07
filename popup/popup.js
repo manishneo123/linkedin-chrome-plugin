@@ -95,6 +95,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cancelCustomTopicBtn = document.getElementById('cancelCustomTopicBtn');
     const continueToInspireBtn = document.getElementById('continueToInspireBtn');
     
+    // Post comment (analyze posts & suggest comments) elements
+    const analyzePostCommentBtn = document.getElementById('analyzePostCommentBtn');
+    const postCommentStatusBadge = document.getElementById('postCommentStatusBadge');
+    const postCommentResults = document.getElementById('postCommentResults');
+    const postCommentResultsList = document.getElementById('postCommentResultsList');
+    const postCommentEmpty = document.getElementById('postCommentEmpty');
+    
     // Store analyzed content references
     let analyzedContentReferences = null;
 
@@ -102,6 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const productBtns = document.querySelectorAll('.product-btn');
     const marketingNav = document.getElementById('marketing-nav');
     const contentNav = document.getElementById('content-nav');
+    const contentModeBar = document.getElementById('content-mode-bar');
     const jobsNav = document.getElementById('jobs-nav');
     
     // Container Views
@@ -185,6 +193,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const debugLog = document.getElementById('debugLog');
 
     // === Helpers ===
+    function escapeHtml(s) {
+        if (typeof s !== 'string') return '';
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function escapeAttr(s) {
+        if (typeof s !== 'string') return '';
+        return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
     function log(msg) {
         console.log(msg);
         const entry = document.createElement('div');
@@ -226,8 +242,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     log("Extension loaded. Initializing...");
 
     // === Backend Configuration ===
-    const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
-    //const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
+    //const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
+    const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
     let userId = null;
     let apiKey = null;
 
@@ -988,18 +1004,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (product === 'marketing') {
             if (marketingNav) marketingNav.classList.remove('hidden');
             if (contentNav) contentNav.classList.add('hidden');
+            if (contentModeBar) contentModeBar.classList.add('hidden');
             if (jobsNav) jobsNav.classList.add('hidden');
             // Show first marketing tab
             showTab('tab-compose');
         } else if (product === 'content') {
             if (marketingNav) marketingNav.classList.add('hidden');
             if (contentNav) contentNav.classList.remove('hidden');
+            if (contentModeBar) contentModeBar.classList.remove('hidden');
             if (jobsNav) jobsNav.classList.add('hidden');
             // Show first tab of content (Setup)
             showTab('tab-content-setup');
         } else if (product === 'jobs') {
             if (marketingNav) marketingNav.classList.add('hidden');
             if (contentNav) contentNav.classList.add('hidden');
+            if (contentModeBar) contentModeBar.classList.add('hidden');
             if (jobsNav) jobsNav.classList.remove('hidden');
             // Show first jobs tab (Analyze Job) and set it as active
             if (jobsNav) {
@@ -1015,6 +1034,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (product === 'settings') {
             if (marketingNav) marketingNav.classList.add('hidden');
             if (contentNav) contentNav.classList.add('hidden');
+            if (contentModeBar) contentModeBar.classList.add('hidden');
             if (jobsNav) jobsNav.classList.add('hidden');
             // Show settings tab
             showTab('tab-settings');
@@ -1035,6 +1055,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             if (currentNav) {
                 currentNav.querySelectorAll('.nav-item').forEach(btn => {
+                    if (btn.dataset.target === targetId) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            }
+            // Update Content mode bar (Create content vs Write comments) when on Create or Comment tab
+            if (currentProduct === 'content' && contentModeBar) {
+                contentModeBar.querySelectorAll('.content-mode-btn').forEach(btn => {
                     if (btn.dataset.target === targetId) btn.classList.add('active');
                     else btn.classList.remove('active');
                 });
@@ -1127,6 +1154,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             showTab(btn.dataset.target);
         });
     });
+
+    if (contentModeBar) {
+        contentModeBar.querySelectorAll('.content-mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.target;
+                if (target) showTab(target);
+            });
+        });
+    }
 
     // Draft Tabs Logic
     draftTabs.forEach(btn => {
@@ -3766,6 +3802,98 @@ Focus on:
         }
     }
     
+    // Analyze visible post and suggest comment (Marketing > Comment tab)
+    async function runPostCommentAnalysis() {
+        if (!analyzePostCommentBtn) return;
+        analyzePostCommentBtn.disabled = true;
+        analyzePostCommentBtn.style.opacity = '0.6';
+        analyzePostCommentBtn.style.cursor = 'not-allowed';
+        const originalText = analyzePostCommentBtn.textContent;
+        analyzePostCommentBtn.textContent = 'Analyzing...';
+        if (postCommentStatusBadge) postCommentStatusBadge.textContent = 'Analyzing...';
+        if (postCommentResults) postCommentResults.classList.add('hidden');
+        if (postCommentEmpty) postCommentEmpty.classList.remove('hidden');
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab || !tab.url || !tab.url.includes('linkedin.com')) {
+                throw new Error('Please open a LinkedIn feed or post page first.');
+            }
+            if (!(await ensureContentScript(tab.id))) {
+                throw new Error('Connection failed. Refresh the LinkedIn page and try again.');
+            }
+            const scrapeResp = await chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_VISIBLE_POST' });
+            if (!scrapeResp || !scrapeResp.success) {
+                throw new Error(scrapeResp?.error || 'Could not read posts. Make sure the feed or a post is visible.');
+            }
+            const posts = Array.isArray(scrapeResp.posts) ? scrapeResp.posts : [];
+            const rawPageExcerpt = (scrapeResp.rawPageExcerpt && String(scrapeResp.rawPageExcerpt).trim()) || '';
+            const hasPosts = posts.length > 0;
+            const hasExcerpt = rawPageExcerpt.length > 50;
+            if (!hasPosts && !hasExcerpt) {
+                throw new Error('No posts found. Scroll so the feed or a post is visible and try again.');
+            }
+            const profile = {
+                sellerGoal: (userGoalInput && userGoalInput.value) ? userGoalInput.value.trim() : '',
+                sellerOffer: (offerDetailsInput && offerDetailsInput.value) ? offerDetailsInput.value.trim() : '',
+                sellerIcp: (icpDefinitionInput && icpDefinitionInput.value) ? icpDefinitionInput.value.trim() : '',
+                sellerProof: (proofPointsInput && proofPointsInput.value) ? proofPointsInput.value.trim() : ''
+            };
+            if (postCommentStatusBadge) postCommentStatusBadge.textContent = hasPosts ? 'Calling API...' : 'Parsing posts with AI...';
+            const apiKey = await getApiKey();
+            const res = await fetch(`${BACKEND_URL}/api/post-comment-suggestion`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                body: JSON.stringify({ posts, profile, rawPageExcerpt: hasExcerpt ? rawPageExcerpt : undefined })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.error || `Request failed (${res.status})`);
+            }
+            const analyses = Array.isArray(data.analyses) ? data.analyses : [];
+            const postPreviews = Array.isArray(data.posts) ? data.posts : [];
+            if (postCommentResultsList) {
+                postCommentResultsList.innerHTML = '';
+                analyses.forEach((analysis, i) => {
+                    const preview = postPreviews[i] || {};
+                    const authorLine = [preview.author, preview.authorHeadline].filter(Boolean).join(' · ') || 'Post';
+                    const card = document.createElement('div');
+                    card.className = 'content-analysis-card post-comment-card';
+                    const suggestedComment = (analysis.suggestedComment && analysis.suggestedComment.trim()) || '';
+                    card.innerHTML = `
+                        <h4 class="post-comment-card-title">Post ${i + 1} ${authorLine ? '— ' + authorLine : ''}</h4>
+                        ${preview.textPreview ? `<p class="post-comment-preview">${escapeHtml(preview.textPreview)}</p>` : ''}
+                        <h5 style="margin: 12px 0 4px; font-size: 12px;">Summary</h5>
+                        <p class="post-comment-text">${escapeHtml(analysis.postSummary || '—')}</p>
+                        <h5 style="margin: 12px 0 4px; font-size: 12px;">Should you comment?</h5>
+                        <p class="post-comment-verdict ${analysis.shouldComment ? 'verdict-yes' : 'verdict-no'}">${analysis.shouldComment ? 'Yes' : 'No'}</p>
+                        <p class="post-comment-reason">${escapeHtml(analysis.reason || '—')}</p>
+                        ${suggestedComment ? `
+                        <h5 style="margin: 12px 0 4px; font-size: 12px;">Suggested comment</h5>
+                        <div class="post-comment-suggested-wrap">
+                            <p class="post-comment-suggested">${escapeHtml(suggestedComment)}</p>
+                            <button type="button" class="secondary-btn copy-post-comment-btn" data-comment="${escapeAttr(suggestedComment)}" style="margin-top: 8px; font-size: 12px;">Copy comment</button>
+                        </div>
+                        ` : ''}
+                    `;
+                    postCommentResultsList.appendChild(card);
+                });
+            }
+            if (postCommentResults) postCommentResults.classList.remove('hidden');
+            if (postCommentEmpty) postCommentEmpty.classList.add('hidden');
+            if (postCommentStatusBadge) postCommentStatusBadge.textContent = 'Done';
+            if (data.remaining != null) updateCreditsDisplay();
+        } catch (e) {
+            if (postCommentStatusBadge) postCommentStatusBadge.textContent = 'Error';
+            alert(e.message);
+            log('[PostComment] ' + e.message);
+        } finally {
+            analyzePostCommentBtn.disabled = false;
+            analyzePostCommentBtn.style.opacity = '1';
+            analyzePostCommentBtn.style.cursor = 'pointer';
+            analyzePostCommentBtn.textContent = originalText;
+        }
+    }
+    
     // Suggest topics based on profile and ICP
     async function suggestContentTopics() {
         if (!suggestTopicsBtn) return;
@@ -4942,6 +5070,26 @@ The image should be:
     // Event listeners for content analysis
     if (analyzeProfileContentBtn) {
         analyzeProfileContentBtn.addEventListener('click', analyzeProfileContentForInspiration);
+    }
+    
+    if (analyzePostCommentBtn) {
+        analyzePostCommentBtn.addEventListener('click', runPostCommentAnalysis);
+    }
+    if (postCommentResultsList) {
+        postCommentResultsList.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.copy-post-comment-btn');
+            if (!btn) return;
+            const text = btn.getAttribute('data-comment') || '';
+            if (!text.trim()) return;
+            try {
+                await navigator.clipboard.writeText(text);
+                const orig = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = orig; }, 2000);
+            } catch (err) {
+                alert('Could not copy to clipboard');
+            }
+        });
     }
     
     if (suggestTopicsBtn) {

@@ -119,6 +119,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true; // Keep channel open for async response
     }
 
+    if (request.action === 'SCRAPE_VISIBLE_POST') {
+        console.log('[ContentScript] 📝 Extracting visible posts from feed/post page...');
+        try {
+            const data = extractVisiblePost();
+            sendResponse({ success: true, posts: data.posts, rawPageExcerpt: data.rawPageExcerpt || '' });
+        } catch (e) {
+            console.error('[ContentScript] ✗ Error extracting posts:', e);
+            sendResponse({ success: false, error: e.message });
+        }
+        return true;
+    }
+
     return true; // Keep channel open for async response
 });
 
@@ -344,6 +356,123 @@ function extractRelatedProfiles() {
     
     console.log(`[RelatedProfiles] ✓ Extracted ${profiles.length} unique profiles`);
     return profiles;
+}
+
+/**
+ * Get a raw excerpt of the main feed/content area for AI fallback when DOM selectors fail.
+ */
+function getRawPageExcerpt() {
+    const mainSelectors = [
+        'main',
+        '.scaffold-layout__main',
+        '[data-test-id="main-feed"]',
+        '.feed-shared-feed',
+        '#main'
+    ];
+    for (const sel of mainSelectors) {
+        const el = document.querySelector(sel);
+        if (el && el.innerText && el.innerText.trim().length > 100) {
+            return el.innerText.trim().replace(/\s+/g, ' ').substring(0, 15000);
+        }
+    }
+    return '';
+}
+
+/**
+ * Extract one post's content from a container element.
+ */
+function extractOnePostFromContainer(container) {
+    const result = {
+        text: '',
+        author: '',
+        authorHeadline: '',
+        timestamp: '',
+        url: window.location.href,
+        engagement: { likes: 0, comments: 0, shares: 0 }
+    };
+    const contentSelectors = [
+        '.feed-shared-text',
+        '.update-components-text',
+        '.feed-shared-update-v2__description',
+        '[data-test-id="main-feed-activity-card__commentary"]',
+        '.feed-shared-text-view'
+    ];
+    for (const sel of contentSelectors) {
+        const el = container.querySelector(sel);
+        if (el && el.innerText && el.innerText.trim().length > 10) {
+            result.text = el.innerText.trim().substring(0, 8000);
+            break;
+        }
+    }
+    if (!result.text) {
+        result.text = container.innerText.trim().substring(0, 8000);
+    }
+    const authorEl = container.querySelector('.feed-shared-actor__name, .update-components-actor__name, .feed-shared-actor__title, [data-test-id="main-feed-activity-card__actor"]');
+    if (authorEl) result.author = authorEl.innerText?.trim() || '';
+    const headlineEl = container.querySelector('.feed-shared-actor__description, .update-components-actor__description');
+    if (headlineEl) result.authorHeadline = headlineEl.innerText?.trim() || '';
+    const timeEl = container.querySelector('time');
+    if (timeEl) result.timestamp = timeEl.getAttribute('datetime') || timeEl.innerText?.trim() || '';
+    const linkEl = container.querySelector('a[href*="/feed/update/"], a[href*="/activity-"], a[href*="/posts/"]');
+    if (linkEl && linkEl.href) result.url = linkEl.href;
+    const barText = container.innerText || '';
+    const likesMatch = barText.match(/(\d+)\s*(?:like|reaction|👍)/i);
+    const commentsMatch = barText.match(/(\d+)\s*comment/i);
+    const sharesMatch = barText.match(/(\d+)\s*share/i);
+    if (likesMatch) result.engagement.likes = parseInt(likesMatch[1], 10);
+    if (commentsMatch) result.engagement.comments = parseInt(commentsMatch[1], 10);
+    if (sharesMatch) result.engagement.shares = parseInt(sharesMatch[1], 10);
+    return result;
+}
+
+/**
+ * Extract multiple visible posts from the current page (feed or post details).
+ * Returns { posts: [...], rawPageExcerpt?: string } for analysis and comment suggestion.
+ * When DOM selectors fail, includes rawPageExcerpt so the backend can use AI to parse posts.
+ */
+function extractVisiblePost() {
+    const postSelectors = [
+        '.feed-shared-update-v2',
+        '.profile-creator-shared-feed-update__container',
+        '[data-test-id="main-feed-activity-card"]',
+        'article[data-id]'
+    ];
+
+    const posts = [];
+    let usedSelector = null;
+    let containers = [];
+
+    for (const sel of postSelectors) {
+        containers = document.querySelectorAll(sel);
+        if (containers.length > 0) {
+            usedSelector = sel;
+            break;
+        }
+    }
+
+    const maxPosts = 15;
+    if (containers.length > 0) {
+        for (let i = 0; i < Math.min(containers.length, maxPosts); i++) {
+            const el = containers[i];
+            if (el && el.innerText && el.innerText.trim().length > 20) {
+                const one = extractOnePostFromContainer(el);
+                if (one.text && one.text.trim().length >= 20) {
+                    posts.push(one);
+                }
+            }
+        }
+        console.log('[VisiblePost] Extracted', posts.length, 'posts from', containers.length, 'containers using', usedSelector);
+    }
+
+    let rawPageExcerpt = '';
+    if (posts.length === 0) {
+        rawPageExcerpt = getRawPageExcerpt();
+        if (rawPageExcerpt) {
+            console.log('[VisiblePost] No posts from DOM; including rawPageExcerpt for AI parsing:', rawPageExcerpt.length, 'chars');
+        }
+    }
+
+    return { posts, rawPageExcerpt };
 }
 
 /**
