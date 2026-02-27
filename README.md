@@ -1,82 +1,171 @@
-# LinkedIn AI Sales Copilot – Chrome Extension
+# AI Copilot for LinkedIn
 
-AI-powered Chrome extension for LinkedIn: sales outreach (profile analysis, messages), content creation, **post comment suggestions**, and job application support (CV analysis, interview prep). Uses your backend for credits and optional API key.
+**Chrome extension for LinkedIn:** sales outreach (profile analysis + messages), **create content** (posts, articles, carousels, scripts), **write comments** on feed posts (analyze multiple posts, get “should you comment?” + suggested comments), and job applications (job analysis, CV optimization, interview prep). Powered by AI; works with **your own OpenAI API key** or with an optional backend for credits.
+
+### Download
+
+**[Install from Chrome Web Store](https://chromewebstore.google.com/detail/ai-copilot-for-linkedin/khgklonoehpkpklolblfabajepgpgbic?hl=en&authuser=0)** — one-click install. No build step required.
+
+---
+
+## Table of contents
+
+- [Download](#download)
+- [Features](#features)
+- [Use your own API key](#use-your-own-api-key)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Code structure](#code-structure)
+- [Backend (optional)](#backend-optional)
+- [Support](#support)
 
 ---
 
 ## Features
 
 ### 📊 Marketing
-- **Compose** – Set outreach goal, ICP, seller config (offer, proof), risk level, and offer type. Capture your profile and analyze a prospect’s LinkedIn profile.
-- **Results** – Fit/influence scores, shared context, outreach strategy, connection request and email drafts, analysis details, related prospects.
+
+| Area | What it does |
+|------|----------------|
+| **Compose** | Set outreach goal, ICP (ideal customer profile), seller config (offer, proof points), risk level, offer type. Capture your LinkedIn profile. Analyze a prospect’s profile from their LinkedIn page. |
+| **Results** | Fit score, influence score, role mapping. Shared context (connections, geography, experience). Recommended approach and timing. Drafts: connection request, cold email, message variants, follow-up sequence. Analysis details (fit reasons, triggers, mismatches, do’s/don’ts). Related prospects from “People also viewed”. |
 
 ### ✍️ Content
-Two main modes (clearly separated in the UI):
 
-- **Create content** – Generate LinkedIn posts, articles, carousels, or video scripts from your content goal, ICP, and topics. Use inspiration from analyzed profiles. View history and content library.
-- **Write comments** – On a LinkedIn feed or post page: analyze **multiple visible posts**, get for each post:
-  - Whether it makes sense to comment (yes/no and reason)
-  - A suggested comment you can copy
+Two clear modes in the UI: **Create content** or **Write comments**.
 
-Content section also includes:
-- **Setup** – Content goal, target audience (ICP), expertise, proof points.
-- **Inspire** – Analyze a profile’s posts for style and topics; save and reuse.
-- **Create** – Topic selection, content type, tone; generate and copy content.
-- **Comment** – “Analyze posts & suggest comments” using visible feed/post content (DOM or AI parsing when needed). Uses Marketing Compose settings (goal, ICP, offer) to decide relevance and draft comments.
-- **History** – Generated content and content library.
+| Mode | What it does |
+|------|----------------|
+| **Create content** | Set content goal and target audience (Setup). Get inspiration by analyzing a profile’s posts (Inspire). Generate LinkedIn **posts**, **articles**, **carousels**, **video scripts**, **polls** (Create). Custom topics, tone (Professional / Friendly / Conversational / Authoritative). Content library and history (History). |
+| **Write comments** | On a LinkedIn **feed** or **post** page: analyze **multiple visible posts** in one go. For each post: short summary, **whether you should comment** (yes/no + reason), and a **suggested comment** to copy. Uses your Marketing settings (goal, ICP, offer) so comments stay on-brand. Falls back to AI parsing of page text when DOM selectors don’t find posts. |
+
+Content tabs: **Setup** → **Inspire** → **Create** → **Comment** → **History**.
 
 ### 💼 Job
-- **Analyze Job** – Extract and analyze a LinkedIn job posting.
-- **CV Analysis** – Upload CV (DOCX/PDF/TXT); get analysis and suggestions.
-- **Interview Prep** – Generate interview questions and suggested answers from a saved job analysis.
-- **Results** – Saved job analyses and interview question sets.
+
+| Area | What it does |
+|------|----------------|
+| **Analyze Job** | Extract and analyze a LinkedIn job posting (title, company, description, requirements, etc.). |
+| **CV Analysis** | Upload your CV (PDF, DOCX, or TXT). Get match score and improvement suggestions. |
+| **Interview Prep** | Generate interview questions and suggested answers from a saved job analysis. |
+| **Results** | List of saved job analyses and interview question sets. |
 
 ### ⚙️ Settings
-- API key (optional when using backend credits).
-- Billing & credits (when using backend).
-- User ID and support links.
+
+- **Use Backend Credits** (checkbox): when **unchecked**, the extension uses **your own OpenAI API key** (see below). When checked, it uses the backend’s credit system.
+- **API key**: Enter your OpenAI API key when not using backend credits.
+- **Billing & credits**: View balance and buy credits when using the backend.
+- **User ID**, documentation link, support contact.
 
 ---
 
-## Requirements
+## Use your own API key
 
-- Chrome (or Chromium-based browser) with the extension loaded.
-- Backend running for credits, storage, and AI (see [README_BACKEND.md](./README_BACKEND.md) and the `linkedin` repo backend).
+You can run the extension **without any backend** by using your own OpenAI API key:
+
+1. Open the extension → **Settings**.
+2. **Uncheck** “Use Backend Credits”.
+3. Enter your **OpenAI API key** in the API key field.
+4. Save. All AI features (profile analysis, content generation, post comment suggestions, job/CV/interview) will use your key and you pay OpenAI directly.
+
+No server, no credits system, no Stripe. Your key is stored locally in the browser. For backend credits, optional payments, and stored analyses, you need the separate backend (see [Backend (optional)](#backend-optional)).
 
 ---
 
 ## Installation
 
-1. Clone this repo and the backend (`linkedin`).
-2. In Chrome: **Extensions** → **Manage extensions** → **Load unpacked** → select the `linkedin-chrome-plugin` folder.
-3. Configure the backend URL in the extension (e.g. in popup/settings or in code; default may be `http://localhost:3000`).
-4. Start the backend and ensure the extension can reach it (CORS, URL).
+1. **Clone this repo**
+   ```bash
+   git clone https://github.com/YOUR_ORG/linkedin-chrome-plugin.git
+   cd linkedin-chrome-plugin
+   ```
+
+2. **Load the extension in Chrome**
+   - Open `chrome://extensions/`.
+   - Turn on **Developer mode** (top right).
+   - Click **Load unpacked** and select the `linkedin-chrome-plugin` folder.
+
+3. **Configure** (see [Configuration](#configuration)): set backend URL if you use the backend, or add your OpenAI API key in Settings to use your own key.
+
+4. **Optional:** Run the backend from the [linkedin](https://github.com/YOUR_ORG/linkedin) repo if you want credits and payments (see [README_BACKEND.md](./README_BACKEND.md)).
 
 ---
 
-## Usage (high level)
+## Configuration
 
-- **Marketing**: Open a prospect’s LinkedIn profile → set goal/ICP/offer in Compose → **Analyze Profile** → see Results and drafts.
-- **Content – Create**: Set content goal and ICP in Setup → use Inspire (optional) → in Create, pick topic and type → generate and copy.
-- **Content – Write comments**: Open LinkedIn feed or a post → in Content, choose **Write comments** (or open Comment tab) → **Analyze posts & suggest comments** → see per-post “should you comment?” and suggested comment; copy as needed.
-- **Job**: Open a job page → Analyze Job → optionally run CV Analysis and Interview Prep from the Job section.
+- **Backend URL**  
+  If you use the backend (credits, payments), set the API base URL in `popup/popup.js`:
+  ```javascript
+  const BACKEND_URL = 'https://your-backend-domain.com';  // or http://localhost:3000
+  ```
 
----
-
-## Project structure
-
-- `popup/` – Popup UI (HTML, CSS, JS): product tabs (Marketing, Content, Job), Compose/Results, Content (Create + Comment + Setup/Inspire/History), Job tabs, Settings.
-- `scripts/content.js` – Injected on LinkedIn: profile scrape, job scrape, **visible posts extraction** (multiple posts or raw page excerpt for AI).
-- `scripts/background.js` – Service worker.
-- `manifest.json` – Permissions, content scripts (LinkedIn), host permissions.
+- **Own API key**  
+  In the extension UI: **Settings** → uncheck “Use Backend Credits” → enter your OpenAI API key. No backend required.
 
 ---
 
-## Backend
+## Usage
 
-The extension expects a backend that provides (among others):
+- **Marketing:** Open a prospect’s LinkedIn profile → in **Compose** set goal/ICP/offer → click **Analyze Profile** → see **Results** and copy drafts.
+- **Content – Create:** In **Content**, use **Setup** (goal, audience) → optionally **Inspire** (analyze a profile’s posts) → **Create** (pick topic and type) → generate and copy.
+- **Content – Write comments:** Open LinkedIn feed or a post → **Content** → **Comment** (or use “Write comments” in the mode bar) → **Analyze posts & suggest comments** → see per-post summary, “Should you comment?”, and suggested comment; copy as needed.
+- **Job:** Open a LinkedIn job page → **Job** → **Analyze Job** → optionally **CV Analysis** and **Interview Prep** from the same section.
 
-- Auth/API key and credits.
-- **POST /api/post-comment-suggestion** – Body: `posts` (array), `profile` (seller goal, offer, ICP, proof), optional `rawPageExcerpt`. Returns `analyses` (per-post summary, shouldComment, reason, suggestedComment), `posts` (previews), credits used/remaining. When DOM posts are missing, the backend can use AI to parse multiple posts from `rawPageExcerpt`.
+---
 
-See the main backend repo and `README_BACKEND.md` for full API and setup.
+## Code structure
+
+```
+linkedin-chrome-plugin/
+├── manifest.json          # Extension manifest (v3): name, permissions, content_scripts, side_panel, action
+├── popup/
+│   ├── popup.html         # Main UI: product tabs (Marketing, Content, Job), Settings; all views
+│   ├── popup.css          # Styles for popup (cards, forms, content-mode bar, post-comment cards, etc.)
+│   ├── popup.js           # All popup logic: product/tab switching, API calls, Marketing/Content/Job flows,
+│   │                      # credit display, post-comment analysis rendering, copy handlers
+│   ├── documentation.html # In-extension docs (linked from Settings)
+│   └── onboarding-modal.html
+├── scripts/
+│   ├── content.js         # Injected on LinkedIn. Message handlers: SCRAPE_PROFILE, SCRAPE_JOB,
+│   │                      # SCRAPE_VISIBLE_POST (multiple posts + rawPageExcerpt), FETCH_POST_CONTENT,
+│   │                      # LOAD_RECENT_ACTIVITY. Helpers: extractVisiblePost(), getRawPageExcerpt(),
+│   │                      # extractRecentActivity(), extractCompanyInfo(), extractRelatedProfiles(), etc.
+│   └── background.js      # Service worker: open side panel on icon click, set side panel for tabs
+├── images/                # Extension icons (16–128px)
+├── README.md              # This file
+├── README_BACKEND.md      # Backend setup, credits, Stripe, API key vs credits
+├── CHROME_STORE_DESCRIPTION.md
+├── PRODUCT_DESCRIPTION.txt
+└── *.md                   # Feature docs (CV, job analysis, etc.)
+```
+
+**Data flow (high level):**
+
+- **Popup** talks to **content script** via `chrome.tabs.sendMessage` (e.g. `SCRAPE_PROFILE`, `SCRAPE_VISIBLE_POST`) when the active tab is LinkedIn.
+- **Popup** either calls **OpenAI** directly (when using your own API key) or your **backend** (e.g. `/api/openai-proxy`, `/api/post-comment-suggestion`) when using backend credits.
+- **Content script** only runs on `linkedin.com`; it reads the DOM and returns structured data (profile text, activity, posts array, raw page excerpt for comment flow, job details).
+
+---
+
+## Backend (optional)
+
+If you want credits, payments, and server-side storage (e.g. analyses, content library), use the backend from the [linkedin](https://github.com/YOUR_ORG/linkedin) repo. See **[README_BACKEND.md](./README_BACKEND.md)** for:
+
+- Backend setup (Node, env, Stripe, OpenAI).
+- Credits vs **own API key**: extension supports both; backend is optional.
+- Endpoints used by the extension: auth, credits, OpenAI proxy, **post-comment-suggestion** (multi-post analysis), job/content analyses, etc.
+- Production deployment and `BACKEND_URL` in `popup/popup.js`.
+
+---
+
+## Support
+
+- **Documentation:** Open the extension → **Settings** → link to in-extension docs.
+- **Email:** manish.neo@gmail.com (or your preferred support contact).
+
+---
+
+## License
+
+See repository license file (if present). Use of this extension and any backend is subject to OpenAI’s and LinkedIn’s terms of use.
