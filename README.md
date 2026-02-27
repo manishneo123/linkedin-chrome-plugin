@@ -77,7 +77,7 @@ No server, no credits system, no Stripe. Your key is stored locally in the brows
 
 1. **Clone this repo**
    ```bash
-   git clone https://github.com/YOUR_ORG/linkedin-chrome-plugin.git
+   git clone https://github.com/manishneo123/linkedin-chrome-plugin.git
    cd linkedin-chrome-plugin
    ```
 
@@ -150,12 +150,18 @@ linkedin-chrome-plugin/
 
 ## Backend (optional)
 
-If you want credits, payments, and server-side storage (e.g. analyses, content library), use the backend from the [linkedin](https://github.com/YOUR_ORG/linkedin) repo. See **[README_BACKEND.md](./README_BACKEND.md)** for:
+If you want credits, payments, and server-side storage (e.g. analyses, content library), use the backend from the **linkedin** repo:
+
+- **Backend repo (this backend):** [linkedin](https://github.com/YOUR_ORG/linkedin) — Node/Express/MySQL API, credits, Stripe, OpenAI proxy.
+
+Replace `YOUR_ORG` with the actual GitHub org or username. See **[README_BACKEND.md](./README_BACKEND.md)** for:
 
 - Backend setup (Node, env, Stripe, OpenAI).
 - Credits vs **own API key**: extension supports both; backend is optional.
 - Endpoints used by the extension: auth, credits, OpenAI proxy, **post-comment-suggestion** (multi-post analysis), job/content analyses, etc.
 - Production deployment and `BACKEND_URL` in `popup/popup.js`.
+
+**Related:** The backend README ([linkedin](https://github.com/YOUR_ORG/linkedin) repo, `backend/README.md`) links back to this Chrome extension and the [Chrome Web Store](https://chromewebstore.google.com/detail/ai-copilot-for-linkedin/khgklonoehpkpklolblfabajepgpgbic?hl=en&authuser=0).
 
 ---
 
