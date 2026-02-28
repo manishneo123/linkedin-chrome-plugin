@@ -18,7 +18,14 @@
             <button class="product-btn settings-btn" data-target="tab-settings">⚙️ Settings</button>
         </nav>
 
-        <!-- Marketing Product Tabs -->
+        <!-- Marketing: two features - Outreach vs Connections -->
+        <div id="marketing-mode-bar" class="marketing-mode-bar hidden">
+            <span class="marketing-mode-label">Choose feature</span>
+            <div class="marketing-mode-options">
+                <button type="button" class="marketing-mode-btn active" data-marketing-mode="outreach">📤 Outreach</button>
+                <button type="button" class="marketing-mode-btn" data-marketing-mode="connections">🤝 Connections</button>
+            </div>
+        </div>
         <nav class="main-nav marketing-nav" id="marketing-nav">
             <button class="nav-item" data-target="tab-compose">Compose</button>
             <button class="nav-item" data-target="tab-results">Results</button>
@@ -218,6 +225,36 @@
                         </div>
                     </details>
                 </div>
+            </div>
+
+            <!-- TAB: CONNECTIONS INTRO LIST (Warm intros from your connections) -->
+            <div id="tab-intro" class="view hidden">
+                <header class="section-header">
+                    <h2>🤝 Warm intro list</h2>
+                    <p class="section-subtitle">Crawl your connections list and get AI-scored leads you can ask your connection to introduce.</p>
+                </header>
+                <p id="introListMessage" class="intro-list-message">Open your <strong>LinkedIn Connections</strong> page (My Network → Connections), then set who you want to find and run the crawl.</p>
+                <details class="config-card connections-criteria-card" open>
+                    <summary>Who to find (matching criteria)</summary>
+                    <div class="card-body">
+                        <label for="connectionsOffer">What you're selling / your offer</label>
+                        <textarea id="connectionsOffer" placeholder="E.g., Enterprise SEO audits, B2B SaaS onboarding, Marketing automation..."></textarea>
+                        <label for="connectionsIcp">Who should we match? (target profile)</label>
+                        <textarea id="connectionsIcp" placeholder="E.g., Heads of marketing at 50–200 person B2B companies, SaaS founders, VP Sales in tech..."></textarea>
+                        <label for="connectionsGoal">Goal for warm intros (optional)</label>
+                        <textarea id="connectionsGoal" placeholder="E.g., Find buyers and influencers for our product, Build pipeline through referrals..."></textarea>
+                    </div>
+                </details>
+                <section class="input-group">
+                    <label for="introThreshold">Min relevance score (0–100)</label>
+                    <input type="number" id="introThreshold" min="0" max="100" value="50" style="width: 80px;">
+                </section>
+                <div class="button-group-with-status">
+                    <button type="button" id="crawlConnectionsBtn" class="primary-btn">Crawl & score connections</button>
+                    <span class="status-badge" id="introStatusBadge">Ready</span>
+                </div>
+                <div id="introEmptyState" class="empty-state">Run the crawl to see connections that match your criteria above.</div>
+                <div id="introListContainer" class="intro-list-container hidden"></div>
             </div>
 
             <!-- TAB: CONTENT SETUP -->

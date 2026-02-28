@@ -9,7 +9,7 @@
     "128": "images/icon128.png"
   },
   "version": "4.0",
-  "description": "AI LinkedIn assistant: sales outreach, create content, write comments on posts & job apps. 200K free credits!",
+  "description": "AI LinkedIn assistant: sales outreach, warm intros from connections, create content, write comments on posts & job apps. 200K free credits!",
   "permissions": [
     "activeTab",
     "scripting",

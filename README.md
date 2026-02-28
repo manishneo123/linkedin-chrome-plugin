@@ -1,6 +1,6 @@
 # AI Copilot for LinkedIn
 
-**Chrome extension for LinkedIn:** sales outreach (profile analysis + messages), **create content** (posts, articles, carousels, scripts), **write comments** on feed posts (analyze multiple posts, get “should you comment?” + suggested comments), and job applications (job analysis, CV optimization, interview prep). Powered by AI; works with **your own OpenAI API key** or with an optional backend for credits.
+**Chrome extension for LinkedIn:** sales outreach (profile analysis + messages), **warm intros from connections** (crawl connections list, AI-score for buyers/influencers/evangelists), **create content** (posts, articles, carousels, scripts), **write comments** on feed posts (analyze multiple posts, get “should you comment?” + suggested comments), and job applications (job analysis, CV optimization, interview prep). Powered by AI; works with **your own OpenAI API key** or with an optional backend for credits.
 
 ### Download
 
@@ -26,10 +26,14 @@
 
 ### 📊 Marketing
 
+Two features: **Outreach** (Compose + Results) and **Connections** (warm intro list).
+
 | Area | What it does |
 |------|----------------|
-| **Compose** | Set outreach goal, ICP (ideal customer profile), seller config (offer, proof points), risk level, offer type. Capture your LinkedIn profile. Analyze a prospect’s profile from their LinkedIn page. |
-| **Results** | Fit score, influence score, role mapping. Shared context (connections, geography, experience). Recommended approach and timing. Drafts: connection request, cold email, message variants, follow-up sequence. Analysis details (fit reasons, triggers, mismatches, do’s/don’ts). Related prospects from “People also viewed”. |
+| **Outreach – Compose** | Set outreach goal, ICP (ideal customer profile), seller config (offer, proof points), risk level, offer type. Capture your LinkedIn profile. Analyze a prospect’s profile from their LinkedIn page. |
+| **Outreach – Results** | Fit score, influence score, role mapping. Shared context (connections, geography, experience). Recommended approach and timing. Drafts: connection request, cold email, message variants, follow-up sequence. Analysis details (fit reasons, triggers, mismatches, do’s/don’ts). Related prospects from “People also viewed”. |
+
+| **Connections** | **Warm intro list:** Open your LinkedIn Connections page (or "connections of" search). Set who to find (what you sell, target profile, goal). Crawl up to 10 pages; AI scores each connection as Buyer, Influencer, or Evangelist with relevance score and reason. See per-page stats and a list of matches to ask your connection to introduce. Uses connection-specific matching criteria (or falls back to Outreach settings). |
 
 ### ✍️ Content
 
@@ -107,7 +111,8 @@ No server, no credits system, no Stripe. Your key is stored locally in the brows
 
 ## Usage
 
-- **Marketing:** Open a prospect’s LinkedIn profile → in **Compose** set goal/ICP/offer → click **Analyze Profile** → see **Results** and copy drafts.
+- **Marketing:** Open a prospect’s LinkedIn profile → choose **Outreach** → in **Compose** set goal/ICP/offer → click **Analyze Profile** → see **Results** and copy drafts.
+- **Marketing – Connections:** Choose **Connections** → set who to find (offer, target profile, goal) → open your LinkedIn Connections page → click **Crawl & score connections** → see scored list (Buyer/Influencer/Evangelist) with reasons; use for warm intros.
 - **Content – Create:** In **Content**, use **Setup** (goal, audience) → optionally **Inspire** (analyze a profile’s posts) → **Create** (pick topic and type) → generate and copy.
 - **Content – Write comments:** Open LinkedIn feed or a post → **Content** → **Comment** (or use “Write comments” in the mode bar) → **Analyze posts & suggest comments** → see per-post summary, “Should you comment?”, and suggested comment; copy as needed.
 - **Job:** Open a LinkedIn job page → **Job** → **Analyze Job** → optionally **CV Analysis** and **Interview Prep** from the same section.

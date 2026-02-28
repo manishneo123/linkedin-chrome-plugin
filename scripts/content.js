@@ -131,6 +131,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
+    if (request.action === 'SCRAPE_CONNECTIONS_PAGE') {
+        console.log('[ContentScript] 👥 Extracting connections from page...');
+        try {
+            const { connections, rawPageExcerpt } = extractConnectionsFromPage();
+            sendResponse({ success: true, connections, rawPageExcerpt: rawPageExcerpt || '' });
+        } catch (e) {
+            console.error('[ContentScript] ✗ Error extracting connections:', e);
+            sendResponse({ success: false, error: e.message });
+        }
+        return true;
+    }
+
+    if (request.action === 'SCROLL_CONNECTIONS_PAGE') {
+        console.log('[ContentScript] 📜 Scrolling connections list...');
+        (async () => {
+            try {
+                await scrollConnectionsPage();
+                sendResponse({ success: true });
+            } catch (e) {
+                console.error('[ContentScript] ✗ Error scrolling connections:', e);
+                sendResponse({ success: false, error: e.message });
+            }
+        })();
+        return true;
+    }
+
     return true; // Keep channel open for async response
 });
 
@@ -356,6 +382,133 @@ function extractRelatedProfiles() {
     
     console.log(`[RelatedProfiles] ✓ Extracted ${profiles.length} unique profiles`);
     return profiles;
+}
+
+/**
+ * Get raw text from the connections list area for AI extraction when DOM selectors fail.
+ */
+function getConnectionsListRawExcerpt() {
+    const selectors = [
+        'main .scaffold-layout__list-container',
+        'main',
+        '[data-view-name="connections-list"]',
+        '.mn-connections',
+        '.scaffold-layout__main'
+    ];
+    for (const sel of selectors) {
+        const el = document.querySelector(sel);
+        if (el && el.innerText && el.innerText.trim().length > 100) {
+            return el.innerText.trim().replace(/\s+/g, ' ').substring(0, 15000);
+        }
+    }
+    return '';
+}
+
+/**
+ * Extract connections from LinkedIn connections list page (/mynetwork/invite-connect/connections/)
+ * Uses connections-list container and fallbacks: entity-result, mn-connection-card, list items with profile links.
+ * Returns { connections, rawPageExcerpt } so the backend can use AI to extract when DOM returns few/none.
+ */
+function extractConnectionsFromPage() {
+    console.log('[Connections] Extracting from connections list page...');
+    const connections = [];
+    const seenUrls = new Set();
+
+    // Primary: scrollable list container on connections page
+    let items = [];
+    const listContainer = document.querySelector('[data-view-name="connections-list"], .mn-connections, main .scaffold-layout__list-container');
+    if (listContainer) {
+        items = listContainer.querySelectorAll('.entity-result, .mn-connection-card, li[class*="connection"], li[class*="entity-result"], .pvs-list__item');
+    }
+    if (items.length === 0) {
+        items = document.querySelectorAll('.entity-result, .mn-connection-card, li.mn-connection-card');
+    }
+    if (items.length === 0) {
+        // Fallback: any list item with a profile link
+        const main = document.querySelector('main') || document.body;
+        const links = main.querySelectorAll('a[href*="/in/"][href*="?miniProfileUrn="], a[href^="https://www.linkedin.com/in/"], a[href^="/in/"]');
+        links.forEach(link => {
+            const href = (link.href || link.getAttribute('href') || '').split('?')[0].replace(/\/$/, '');
+            if (!href || !href.includes('/in/') || seenUrls.has(href)) return;
+            const name = link.innerText?.trim() || link.textContent?.trim() || '';
+            if (name.length < 2 || name.length > 150) return;
+            const card = link.closest('li, .entity-result, .mn-connection-card, .pvs-list__item, [class*="connection"]') || link.parentElement;
+            let headline = '';
+            let location = '';
+            if (card) {
+                const sub = card.querySelector('.entity-result__primary-subtitle, .entity-result__summary, .pvs-entity__caption, .mn-connection-card__details');
+                headline = sub?.innerText?.trim() || '';
+                const locEl = card.querySelector('.entity-result__secondary-subtitle, .pvs-entity__sub-title');
+                location = locEl?.innerText?.trim() || '';
+            }
+            seenUrls.add(href);
+            connections.push({ name, url: href, headline, location });
+        });
+        console.log('[Connections] ✓ Extracted via link fallback:', connections.length);
+        const rawPageExcerpt = connections.length === 0 ? getConnectionsListRawExcerpt() : '';
+        if (rawPageExcerpt) console.log('[Connections] Including rawPageExcerpt for AI extraction:', rawPageExcerpt.length, 'chars');
+        return { connections, rawPageExcerpt: rawPageExcerpt || '' };
+    }
+
+    items.forEach((item) => {
+        try {
+            const nameEl = item.querySelector('.entity-result__title-text a, .mn-connection-card__name a, .pvs-entity__sub-title a, a[href*="/in/"]');
+            const name = nameEl?.innerText?.trim() || nameEl?.textContent?.trim() || '';
+            let url = null;
+            if (nameEl && (nameEl.href || nameEl.getAttribute('href'))) {
+                url = (nameEl.href || nameEl.getAttribute('href')).split('?')[0].replace(/\/$/, '');
+            } else {
+                const link = item.querySelector('a[href*="/in/"]');
+                if (link) url = (link.href || link.getAttribute('href')).split('?')[0].replace(/\/$/, '');
+            }
+            if (!name || !url || !url.includes('/in/') || seenUrls.has(url)) return;
+            const headlineEl = item.querySelector('.entity-result__primary-subtitle, .entity-result__summary, .pvs-entity__caption, .mn-connection-card__details');
+            const headline = headlineEl?.innerText?.trim() || '';
+            const locationEl = item.querySelector('.entity-result__secondary-subtitle, .pvs-entity__sub-title');
+            const location = locationEl?.innerText?.trim() || '';
+            seenUrls.add(url);
+            connections.push({ name, url, headline, location });
+        } catch (err) {
+            console.log('[Connections] ⚠ Error parsing item:', err.message);
+        }
+    });
+
+    // When DOM got few or none, include raw excerpt so backend can use AI
+    let rawPageExcerpt = '';
+    if (connections.length === 0) {
+        rawPageExcerpt = getConnectionsListRawExcerpt();
+        if (rawPageExcerpt) console.log('[Connections] No DOM results; including rawPageExcerpt for AI extraction:', rawPageExcerpt.length, 'chars');
+    }
+    console.log('[Connections] ✓ Extracted', connections.length, 'connections');
+    return { connections, rawPageExcerpt };
+}
+
+/**
+ * Scroll the connections list to load more items (infinite scroll).
+ * Tries list container first (search results / my network), then main.
+ */
+function scrollConnectionsPage() {
+    const scrollSelectors = [
+        'main .scaffold-layout__list-container',
+        '.mn-connections',
+        '[data-view-name="connections-list"]',
+        '.search-results__list-container',
+        'main .scaffold-layout__main',
+        'main'
+    ];
+    let scrollEl = null;
+    for (const sel of scrollSelectors) {
+        const el = document.querySelector(sel);
+        if (!el) continue;
+        const canScroll = el.scrollHeight > el.clientHeight || sel === 'main';
+        if (canScroll) {
+            scrollEl = el;
+            break;
+        }
+    }
+    if (!scrollEl) scrollEl = document.querySelector('main') || document.documentElement;
+    scrollEl.scrollTop = scrollEl.scrollHeight;
+    return new Promise((resolve) => setTimeout(resolve, 2000));
 }
 
 /**

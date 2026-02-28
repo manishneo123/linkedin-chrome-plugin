@@ -110,6 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const marketingNav = document.getElementById('marketing-nav');
     const contentNav = document.getElementById('content-nav');
     const contentModeBar = document.getElementById('content-mode-bar');
+    const marketingModeBar = document.getElementById('marketing-mode-bar');
     const jobsNav = document.getElementById('jobs-nav');
     
     // Container Views
@@ -187,6 +188,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Related Profiles
     const relatedProfilesContainer = document.getElementById('relatedProfilesContainer');
 
+    // Connections intro list (warm intros)
+    const introListMessage = document.getElementById('introListMessage');
+    const introListContainer = document.getElementById('introListContainer');
+    const crawlConnectionsBtn = document.getElementById('crawlConnectionsBtn');
+    const introThresholdInput = document.getElementById('introThreshold');
+    const introStatusBadge = document.getElementById('introStatusBadge');
+    const introEmptyState = document.getElementById('introEmptyState');
+    const connectionsOfferInput = document.getElementById('connectionsOffer');
+    const connectionsIcpInput = document.getElementById('connectionsIcp');
+    const connectionsGoalInput = document.getElementById('connectionsGoal');
+
     // Draft Tabs
     const draftTabs = document.querySelectorAll('.draft-tab');
 
@@ -242,8 +254,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     log("Extension loaded. Initializing...");
 
     // === Backend Configuration ===
-    //const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
-    const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
+    const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
+    //const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
+    // Classic path (My Network → Connections) or search results "connections of [profile]"
+    function isConnectionsListPage(url) {
+        if (!url || !url.includes('linkedin.com')) return false;
+        if (/linkedin\.com\/mynetwork\/invite-connect\/connections/.test(url)) return true;
+        if (/linkedin\.com\/search\/results\/people/.test(url) && url.includes('connectionOf')) return true;
+        return false;
+    }
     let userId = null;
     let apiKey = null;
 
@@ -664,7 +683,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         'offer_details', 'proof_points', 'risk_level', 'offer_type',
         'sender_profile_cache', 'sender_profile_structured', 'sender_profile_date',
         'use_backend_credits',
-        'content_goal', 'content_icp', 'content_expertise', 'content_proof_points'
+        'content_goal', 'content_icp', 'content_expertise', 'content_proof_points',
+        'connections_goal', 'connections_icp', 'connections_offer'
     ]);
 
     if (stored.openai_api_key) apiKeyInput.value = stored.openai_api_key;
@@ -686,6 +706,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (stored.content_icp && contentIcpInput) contentIcpInput.value = stored.content_icp;
     if (stored.content_expertise && contentExpertiseInput) contentExpertiseInput.value = stored.content_expertise;
     if (stored.content_proof_points && contentProofPointsInput) contentProofPointsInput.value = stored.content_proof_points;
+    
+    if (connectionsGoalInput && stored.connections_goal != null) connectionsGoalInput.value = stored.connections_goal;
+    if (connectionsIcpInput && stored.connections_icp != null) connectionsIcpInput.value = stored.connections_icp;
+    if (connectionsOfferInput && stored.connections_offer != null) connectionsOfferInput.value = stored.connections_offer;
     
     // Initialize backend credits toggle and API key section visibility
     if (stored.use_backend_credits !== undefined) {
@@ -969,6 +993,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     userGoalInput.addEventListener('change', () => saveSetting('user_goal', userGoalInput.value));
     icpDefinitionInput.addEventListener('change', () => saveSetting('icp_definition', icpDefinitionInput.value));
     offerDetailsInput.addEventListener('change', () => saveSetting('offer_details', offerDetailsInput.value));
+    if (connectionsGoalInput) connectionsGoalInput.addEventListener('change', () => saveSetting('connections_goal', connectionsGoalInput.value));
+    if (connectionsIcpInput) connectionsIcpInput.addEventListener('change', () => saveSetting('connections_icp', connectionsIcpInput.value));
+    if (connectionsOfferInput) connectionsOfferInput.addEventListener('change', () => saveSetting('connections_offer', connectionsOfferInput.value));
     proofPointsInput.addEventListener('change', () => saveSetting('proof_points', proofPointsInput.value));
     riskLevelInput.addEventListener('change', () => saveSetting('risk_level', riskLevelInput.value));
     offerTypeInput.addEventListener('change', () => saveSetting('offer_type', offerTypeInput.value));
@@ -1002,13 +1029,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Show/hide product-specific navs
         if (product === 'marketing') {
+            if (marketingModeBar) marketingModeBar.classList.remove('hidden');
             if (marketingNav) marketingNav.classList.remove('hidden');
             if (contentNav) contentNav.classList.add('hidden');
             if (contentModeBar) contentModeBar.classList.add('hidden');
             if (jobsNav) jobsNav.classList.add('hidden');
-            // Show first marketing tab
+            marketingModeBar && marketingModeBar.querySelectorAll('.marketing-mode-btn').forEach(btn => {
+                if (btn.dataset.marketingMode === 'outreach') btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
             showTab('tab-compose');
         } else if (product === 'content') {
+            if (marketingModeBar) marketingModeBar.classList.add('hidden');
             if (marketingNav) marketingNav.classList.add('hidden');
             if (contentNav) contentNav.classList.remove('hidden');
             if (contentModeBar) contentModeBar.classList.remove('hidden');
@@ -1016,6 +1048,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Show first tab of content (Setup)
             showTab('tab-content-setup');
         } else if (product === 'jobs') {
+            if (marketingModeBar) marketingModeBar.classList.add('hidden');
             if (marketingNav) marketingNav.classList.add('hidden');
             if (contentNav) contentNav.classList.add('hidden');
             if (contentModeBar) contentModeBar.classList.add('hidden');
@@ -1032,6 +1065,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             showTab('tab-job-analyze');
         } else if (product === 'settings') {
+            if (marketingModeBar) marketingModeBar.classList.add('hidden');
             if (marketingNav) marketingNav.classList.add('hidden');
             if (contentNav) contentNav.classList.add('hidden');
             if (contentModeBar) contentModeBar.classList.add('hidden');
@@ -1048,6 +1082,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             let currentNav = null;
             if (currentProduct === 'marketing') {
                 currentNav = marketingNav;
+                if (targetId === 'tab-intro') {
+                    if (marketingNav) marketingNav.classList.add('hidden');
+                    if (marketingModeBar) marketingModeBar.querySelectorAll('.marketing-mode-btn').forEach(btn => {
+                        if (btn.dataset.marketingMode === 'connections') btn.classList.add('active');
+                        else btn.classList.remove('active');
+                    });
+                } else {
+                    if (marketingNav) marketingNav.classList.remove('hidden');
+                    if (marketingModeBar) marketingModeBar.querySelectorAll('.marketing-mode-btn').forEach(btn => {
+                        if (btn.dataset.marketingMode === 'outreach') btn.classList.add('active');
+                        else btn.classList.remove('active');
+                    });
+                }
             } else if (currentProduct === 'content') {
                 currentNav = contentNav;
             } else if (currentProduct === 'jobs') {
@@ -1160,6 +1207,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.addEventListener('click', () => {
                 const target = btn.dataset.target;
                 if (target) showTab(target);
+            });
+        });
+    }
+
+    if (marketingModeBar) {
+        marketingModeBar.querySelectorAll('.marketing-mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.marketingMode;
+                if (mode === 'connections') {
+                    if (marketingNav) marketingNav.classList.add('hidden');
+                    marketingModeBar.querySelectorAll('.marketing-mode-btn').forEach(b => {
+                        if (b.dataset.marketingMode === 'connections') b.classList.add('active');
+                        else b.classList.remove('active');
+                    });
+                    showTab('tab-intro');
+                } else if (mode === 'outreach') {
+                    if (marketingNav) marketingNav.classList.remove('hidden');
+                    marketingModeBar.querySelectorAll('.marketing-mode-btn').forEach(b => {
+                        if (b.dataset.marketingMode === 'outreach') b.classList.add('active');
+                        else b.classList.remove('active');
+                    });
+                    showTab('tab-compose');
+                }
             });
         });
     }
@@ -1832,9 +1902,10 @@ Rules:
     }
 
     /**
-     * Analyze related profiles to find relevant prospects
+     * Analyze related profiles to find relevant prospects.
+     * @param {number} [maxResults=5] - Max profiles to return (0 or large number = no limit, return all with score >= 50)
      */
-    async function analyzeRelatedProfiles(profiles, sellerGoal, icpDefinition, sellerOffer, apiKey, prospectId) {
+    async function analyzeRelatedProfiles(profiles, sellerGoal, icpDefinition, sellerOffer, apiKey, prospectId, maxResults = 5) {
         const useBackend = useBackendCreditsCheckbox.checked;
         // Only require API key if not using backend credits
         if (!useBackend && !apiKey) {
@@ -1855,7 +1926,7 @@ Location: ${profile.location || 'Not specified'}
 LinkedIn: ${profile.url}`;
         }).join('\n\n---\n\n');
 
-        const prompt = `You are analyzing LinkedIn profiles to identify which ones are relevant prospects for a seller.
+        const prompt = `You are analyzing LinkedIn profiles to identify which ones are relevant for a seller. Be pragmatic: value not only direct buyers but also people who can influence deals or spread the word.
 
 SELLER CONTEXT:
 - Goal: ${sellerGoal || 'Not specified'}
@@ -1866,10 +1937,14 @@ RELATED PROFILES:
 ${profilesText}
 
 For each profile, determine:
-1. **Relevance Score (0-100)**: How well does this profile match the ICP?
-2. **Fit Reasons**: Why this profile might be a good fit (industry, role, company, etc.)
-3. **Potential Value**: Why this person might need the seller's offer
-4. **Decision Power**: Likely buyer / influencer / not relevant
+1. **Relevance Score (0-100)**: How well does this profile match the ICP or represent a useful connection (buyer, influencer, or evangelist)?
+2. **Fit Reasons**: Why this profile might be a good fit (industry, role, company, network, etc.)
+3. **Potential Value**: Why this person might need the seller's offer, or how they could help (buy, recommend, refer).
+4. **Decision Power / Role**: Classify as exactly one of:
+   - **Buyer**: Can directly purchase or sign (decision maker, budget holder).
+   - **Influencer**: Can influence the sale (recommender, champion, internal advocate, advisor to buyers).
+   - **Evangelist**: Can promote or refer (community lead, content creator, connector who could spread the word or refer others).
+   - **Not Relevant**: No clear path to value for the seller.
 
 Return ONLY a JSON object with this structure:
 {
@@ -1880,16 +1955,16 @@ Return ONLY a JSON object with this structure:
       "headline": "Profile headline",
       "relevanceScore": number (0-100),
       "fitReasons": ["reason1", "reason2"],
-      "potentialValue": "Why they might need the offer",
-      "decisionPower": "Buyer | Influencer | Not Relevant"
+      "potentialValue": "Why they might need the offer or how they could help",
+      "decisionPower": "Buyer | Influencer | Evangelist | Not Relevant"
     }
   ]
 }
 
 Rules:
-- Only include profiles with relevanceScore >= 50
+- Include profiles that are Buyer, Influencer, OR Evangelist (relevanceScore >= 50). Exclude only "Not Relevant".
 - Sort by relevanceScore (highest first)
-- Limit to top 5 most relevant profiles
+${maxResults > 0 && maxResults <= 50 ? `- Limit to top ${maxResults} most relevant profiles` : '- Include all profiles with relevanceScore >= 50 (no limit)'}
 - Be specific about why each profile is relevant
 - Return valid JSON only`;
 
@@ -3331,6 +3406,197 @@ Also generate complete sequences:
             analyzeBtn.textContent = originalText;
         }
     });
+
+    // === Connections intro list (crawl + score) ===
+    async function runConnectionsCrawl() {
+        if (!crawlConnectionsBtn || !introListContainer) return;
+        crawlConnectionsBtn.disabled = true;
+        if (introStatusBadge) introStatusBadge.textContent = 'Starting...';
+        const originalText = crawlConnectionsBtn.textContent;
+
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab || !tab.url || !isConnectionsListPage(tab.url)) {
+                alert('Open your LinkedIn Connections page first: My Network → Connections, or a "connections of" search results page.');
+                return;
+            }
+            if (!(await ensureContentScript(tab.id))) {
+                throw new Error('Please refresh the Connections page and try again.');
+            }
+
+            const allConnections = new Map();
+            let savedRawExcerpt = '';
+            const iterations = 10;
+            const delayBetweenPages = 2000;
+            const perPageNew = []; // how many new profiles added per page
+            const perPageParsed = []; // for debug: profiles parsed per page
+
+            log('[Connections] Starting crawl (first page gets a short delay so list can render).');
+            for (let i = 0; i < iterations; i++) {
+                const sizeBefore = allConnections.size;
+                if (introStatusBadge) introStatusBadge.textContent = `Crawling page ${i + 1}/${iterations}...`;
+                if (i === 0) {
+                    await new Promise(r => setTimeout(r, 1500));
+                } else {
+                    await chrome.tabs.sendMessage(tab.id, { action: 'SCROLL_CONNECTIONS_PAGE' });
+                    await new Promise(r => setTimeout(r, delayBetweenPages));
+                }
+                const resp = await chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_CONNECTIONS_PAGE' });
+                let scrapedCount = 0;
+                const pageProfiles = [];
+                if (resp && resp.success) {
+                    if (Array.isArray(resp.connections)) {
+                        scrapedCount = resp.connections.length;
+                        resp.connections.forEach(c => {
+                            if (c && c.url && c.name) {
+                                const url = (c.url || '').split('?')[0].replace(/\/$/, '');
+                                if (url && url.includes('/in/')) {
+                                    allConnections.set(url, { name: c.name, url, headline: c.headline || '', location: c.location || '' });
+                                    pageProfiles.push({ name: c.name, headline: (c.headline || '').substring(0, 60), url });
+                                }
+                            }
+                        });
+                    }
+                    if (resp.rawPageExcerpt && String(resp.rawPageExcerpt).trim().length > 50) {
+                        savedRawExcerpt = savedRawExcerpt || String(resp.rawPageExcerpt).trim();
+                    }
+                }
+                const newThisPage = allConnections.size - sizeBefore;
+                perPageNew.push(newThisPage);
+                perPageParsed.push(pageProfiles);
+                log(`[Connections] Page ${i + 1}: parsed ${scrapedCount} → +${newThisPage} new (total ${allConnections.size})`);
+                pageProfiles.forEach((p, idx) => {
+                    log(`  ${idx + 1}. ${p.name} | ${p.headline || '—'} | ${p.url || '—'}`);
+                });
+                if (introStatusBadge) introStatusBadge.textContent = `Page ${i + 1}/${iterations}: ${scrapedCount} scraped, +${newThisPage} new (total ${allConnections.size})`;
+            }
+
+            let connections = Array.from(allConnections.values());
+            log(`[Connections] Total unique parsed: ${connections.length}`);
+            connections.forEach((p, idx) => {
+                log(`  ${idx + 1}. ${p.name} | ${(p.headline || '').substring(0, 50)} | ${p.url || '—'}`);
+            });
+            // When DOM extraction returned no connections, use AI to extract from listing page text
+            if (connections.length === 0 && savedRawExcerpt.length > 50) {
+                const useBackend = useBackendCreditsCheckbox && useBackendCreditsCheckbox.checked;
+                if (useBackend) {
+                    if (introStatusBadge) introStatusBadge.textContent = 'Extracting with AI...';
+                    try {
+                        const apiKey = await getApiKey();
+                        const extractRes = await fetch(`${BACKEND_URL}/api/connections-extract`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+                            body: JSON.stringify({ rawPageExcerpt: savedRawExcerpt.substring(0, 15000) })
+                        });
+                        const extractData = await extractRes.json().catch(() => ({}));
+                        if (extractRes.ok && Array.isArray(extractData.connections)) {
+                            extractData.connections.forEach(c => {
+                                if (c && (c.name || c.url)) {
+                                    const url = (c.url && String(c.url).trim()) ? String(c.url).split('?')[0].replace(/\/$/, '') : '';
+                                    const key = url && url.includes('/in/') ? url : (c.name || '').toLowerCase();
+                                    if (key) allConnections.set(key, { name: c.name || '', url: url || '', headline: c.headline || '', location: c.location || '' });
+                                }
+                            });
+                            connections = Array.from(allConnections.values());
+                            if (introStatusBadge) introStatusBadge.textContent = `AI extracted ${connections.length} connections`;
+                        }
+                        if (typeof updateCreditsDisplay === 'function') updateCreditsDisplay();
+                    } catch (extractErr) {
+                        log('[Connections] AI extract failed: ' + (extractErr.message || extractErr));
+                    }
+                }
+            }
+
+            if (connections.length === 0) {
+                if (introStatusBadge) introStatusBadge.textContent = 'No connections found';
+                introEmptyState.classList.remove('hidden');
+                introListContainer.classList.add('hidden');
+                introListContainer.innerHTML = '';
+                return;
+            }
+
+            if (introStatusBadge) introStatusBadge.textContent = `Scored ${connections.length} connections...`;
+            const sellerGoal = (connectionsGoalInput && connectionsGoalInput.value) ? connectionsGoalInput.value.trim() : ((userGoalInput && userGoalInput.value) ? userGoalInput.value.trim() : '');
+            const icpDefinition = (connectionsIcpInput && connectionsIcpInput.value) ? connectionsIcpInput.value.trim() : ((icpDefinitionInput && icpDefinitionInput.value) ? icpDefinitionInput.value.trim() : '');
+            const sellerOffer = (connectionsOfferInput && connectionsOfferInput.value) ? connectionsOfferInput.value.trim() : ((offerDetailsInput && offerDetailsInput.value) ? offerDetailsInput.value.trim() : '');
+            const apiKey = await getApiKey();
+            const useBackend = useBackendCreditsCheckbox && useBackendCreditsCheckbox.checked;
+            if (!useBackend && !apiKey) {
+                throw new Error('Set your API key in Settings or use backend credits.');
+            }
+
+            const relevant = await analyzeRelatedProfiles(connections, sellerGoal, icpDefinition, sellerOffer, apiKey, null, 0);
+            log(`[Connections] AI returned ${(relevant || []).length} relevant profiles (score ≥ 50):`);
+            (relevant || []).forEach((p, idx) => {
+                const score = p.relevanceScore != null ? p.relevanceScore : '—';
+                const reasons = (p.fitReasons && p.fitReasons.length) ? p.fitReasons.join('; ') : (p.potentialValue || '—');
+                log(`  ${idx + 1}. ${p.name} | score ${score} | ${(reasons || '').substring(0, 80)}`);
+            });
+            const threshold = Math.max(0, Math.min(100, parseInt(introThresholdInput?.value || '50', 10) || 50));
+            const filtered = (relevant || []).filter(p => (p.relevanceScore || 0) >= threshold);
+            log(`[Connections] Scored (passed threshold ${threshold}): ${filtered.length} profiles`);
+            filtered.forEach((p, idx) => {
+                log(`  ${idx + 1}. ${p.name} | ${p.relevanceScore != null ? p.relevanceScore : '—'}`);
+            });
+
+            introEmptyState.classList.add('hidden');
+            introListContainer.classList.remove('hidden');
+            introListContainer.innerHTML = '';
+            const perPageSummary = perPageNew.length ? `Per page (new): ${perPageNew.join(', ')} → ${connections.length} unique` : '';
+            if (perPageSummary) {
+                const summaryEl = document.createElement('p');
+                summaryEl.className = 'intro-list-per-page-summary';
+                summaryEl.textContent = perPageSummary;
+                introListContainer.appendChild(summaryEl);
+            }
+            if (filtered.length === 0) {
+                const msg = document.createElement('p');
+                msg.className = 'empty-state';
+                msg.textContent = `No connections scored at or above ${threshold}. Try lowering the min relevance score.`;
+                introListContainer.appendChild(msg);
+            }
+            filtered.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'intro-list-card';
+                const name = escapeHtml((p.name || '').trim());
+                const headline = escapeHtml((p.headline || '').trim());
+                const score = typeof p.relevanceScore === 'number' ? p.relevanceScore : '—';
+                const role = (p.decisionPower && String(p.decisionPower).trim()) || '—';
+                const url = (p.url || '').split('?')[0];
+                const fitReasonsText = Array.isArray(p.fitReasons) && p.fitReasons.length
+                    ? p.fitReasons.join(', ')
+                    : (p.potentialValue && String(p.potentialValue).trim()) || '';
+                const reasonText = (fitReasonsText || 'Relevant to your ICP').trim();
+                const reasonHtml = reasonText ? `<div class="intro-list-card-reason">Why: ${escapeHtml(reasonText)}</div>` : '';
+                card.innerHTML = `
+                    <div class="intro-list-card-title">${name}</div>
+                    ${headline ? `<div class="intro-list-card-headline">${headline}</div>` : ''}
+                    <div class="intro-list-card-score">Relevance: <strong>${score}</strong></div>
+                    <div class="intro-list-card-role">Role: <strong>${escapeHtml(role)}</strong></div>
+                    ${reasonHtml}
+                    ${url ? `<a href="${escapeAttr(url)}" target="_blank" rel="noopener" class="secondary-btn intro-list-open-btn">Open profile</a>` : ''}
+                `;
+                introListContainer.appendChild(card);
+            });
+            if (introStatusBadge) introStatusBadge.textContent = `Done · ${filtered.length} matches`;
+            if (typeof updateCreditsDisplay === 'function') updateCreditsDisplay();
+        } catch (e) {
+            if (e && e.code === 'INSUFFICIENT_CREDITS') {
+                alert('Insufficient credits. Buy more in Settings or use your own API key.');
+                if (typeof showTab === 'function') showTab('tab-settings');
+            } else {
+                alert(e.message || 'Crawl failed');
+            }
+            if (introStatusBadge) introStatusBadge.textContent = 'Error';
+        } finally {
+            crawlConnectionsBtn.disabled = false;
+            crawlConnectionsBtn.textContent = originalText;
+        }
+    }
+
+    if (crawlConnectionsBtn) {
+        crawlConnectionsBtn.addEventListener('click', () => runConnectionsCrawl());
+    }
 
     // === AI Content Copilot ===
     
