@@ -1994,6 +1994,12 @@ pre {
     color: var(--accent-color);
 }
 
+.intro-list-card-followers {
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: var(--text-secondary);
+}
+
 .intro-list-card-role {
     font-size: 12px;
     margin-bottom: 8px;

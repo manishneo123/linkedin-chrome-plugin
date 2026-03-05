@@ -1923,6 +1923,7 @@ Rules:
 Name: ${profile.name}
 Headline: ${profile.headline}
 Location: ${profile.location || 'Not specified'}
+Followers: ${profile.followers || 'Not specified'}
 LinkedIn: ${profile.url}`;
         }).join('\n\n---\n\n');
 
@@ -1937,8 +1938,8 @@ RELATED PROFILES:
 ${profilesText}
 
 For each profile, determine:
-1. **Relevance Score (0-100)**: How well does this profile match the ICP or represent a useful connection (buyer, influencer, or evangelist)?
-2. **Fit Reasons**: Why this profile might be a good fit (industry, role, company, network, etc.)
+1. **Relevance Score (0-100)**: How well does this profile match the ICP or represent a useful connection (buyer, influencer, or evangelist)? Use **follower count** when provided: higher reach can signal influence or evangelist potential.
+2. **Fit Reasons**: Why this profile might be a good fit (industry, role, company, network, reach, etc.)
 3. **Potential Value**: Why this person might need the seller's offer, or how they could help (buy, recommend, refer).
 4. **Decision Power / Role**: Classify as exactly one of:
    - **Buyer**: Can directly purchase or sign (decision maker, budget holder).
@@ -1953,6 +1954,7 @@ Return ONLY a JSON object with this structure:
       "name": "Full Name",
       "url": "LinkedIn profile URL",
       "headline": "Profile headline",
+      "followers": "Follower count from the profile input when provided (e.g. 5K, 10K), or empty string",
       "relevanceScore": number (0-100),
       "fitReasons": ["reason1", "reason2"],
       "potentialValue": "Why they might need the offer or how they could help",
@@ -1962,6 +1964,7 @@ Return ONLY a JSON object with this structure:
 }
 
 Rules:
+- For each profile, include "followers" in the output: copy the follower count from the RELATED PROFILES input when provided; otherwise use "".
 - Include profiles that are Buyer, Influencer, OR Evangelist (relevanceScore >= 50). Exclude only "Not Relevant".
 - Sort by relevanceScore (highest first)
 ${maxResults > 0 && maxResults <= 50 ? `- Limit to top ${maxResults} most relevant profiles` : '- Include all profiles with relevanceScore >= 50 (no limit)'}
@@ -2009,9 +2012,16 @@ ${maxResults > 0 && maxResults <= 50 ? `- Limit to top ${maxResults} most releva
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content || data.response?.choices?.[0]?.message?.content;
 
-        log("[RelatedProfiles] ✓ Received response, parsing...");
-        const parsed = JSON.parse(content);
+        log("[RelatedProfiles] ✓ Received response, content length:", (content && content.length) || 0);
+        let parsed;
+        try {
+            parsed = JSON.parse(content);
+        } catch (parseErr) {
+            log("[RelatedProfiles] ✗ JSON parse failed:", parseErr.message, "content preview:", (content || '').substring(0, 300));
+            throw parseErr;
+        }
         const relevant = parsed.relevantProfiles || [];
+        log("[RelatedProfiles] Parsed relevantProfiles count:", relevant.length, "keys:", parsed ? Object.keys(parsed) : []);
         
         // Preserve original URLs from input profiles if GPT didn't return them or returned invalid ones
         const profilesMap = new Map();
@@ -2037,16 +2047,17 @@ ${maxResults > 0 && maxResults <= 50 ? `- Limit to top ${maxResults} most releva
                 finalUrl = 'https://www.linkedin.com/in/' + finalUrl.replace(/^\/+|\/+$/g, '');
             }
             
+            const original = profiles.find(p => p.name?.toLowerCase().trim() === nameKey);
             return {
                 ...gptProfile,
                 url: finalUrl,
-                // Also preserve original headline and location if GPT didn't return them
-                headline: gptProfile.headline || profiles.find(p => p.name?.toLowerCase().trim() === nameKey)?.headline || '',
-                location: gptProfile.location || profiles.find(p => p.name?.toLowerCase().trim() === nameKey)?.location || ''
+                headline: gptProfile.headline || original?.headline || '',
+                location: gptProfile.location || original?.location || '',
+                followers: original?.followers || gptProfile.followers || ''
             };
         });
 
-        log(`[RelatedProfiles] ✓ Found ${enrichedProfiles.length} relevant profiles`);
+        log(`[RelatedProfiles] ✓ Enriched ${enrichedProfiles.length} relevant profiles (merge done)`);
         log(`[RelatedProfiles] URLs preserved: ${enrichedProfiles.filter(p => p.url).length}/${enrichedProfiles.length}`);
         
         return enrichedProfiles;
@@ -3409,13 +3420,18 @@ Also generate complete sequences:
 
     // === Connections intro list (crawl + score) ===
     async function runConnectionsCrawl() {
-        if (!crawlConnectionsBtn || !introListContainer) return;
+        log('[Connections] runConnectionsCrawl started');
+        if (!crawlConnectionsBtn || !introListContainer) {
+            log('[Connections] Early exit: missing crawlConnectionsBtn or introListContainer');
+            return;
+        }
         crawlConnectionsBtn.disabled = true;
         if (introStatusBadge) introStatusBadge.textContent = 'Starting...';
         const originalText = crawlConnectionsBtn.textContent;
 
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            log('[Connections] Tab URL:', tab?.url || 'none', 'isConnectionsPage:', tab?.url ? isConnectionsListPage(tab.url) : false);
             if (!tab || !tab.url || !isConnectionsListPage(tab.url)) {
                 alert('Open your LinkedIn Connections page first: My Network → Connections, or a "connections of" search results page.');
                 return;
@@ -3451,8 +3467,8 @@ Also generate complete sequences:
                             if (c && c.url && c.name) {
                                 const url = (c.url || '').split('?')[0].replace(/\/$/, '');
                                 if (url && url.includes('/in/')) {
-                                    allConnections.set(url, { name: c.name, url, headline: c.headline || '', location: c.location || '' });
-                                    pageProfiles.push({ name: c.name, headline: (c.headline || '').substring(0, 60), url });
+                                    allConnections.set(url, { name: c.name, url, headline: c.headline || '', location: c.location || '', followers: c.followers || '' });
+                                    pageProfiles.push({ name: c.name, headline: (c.headline || '').substring(0, 60), url, followers: c.followers || '' });
                                 }
                             }
                         });
@@ -3472,7 +3488,7 @@ Also generate complete sequences:
             }
 
             let connections = Array.from(allConnections.values());
-            log(`[Connections] Total unique parsed: ${connections.length}`);
+            log(`[Connections] Total unique parsed: ${connections.length} (allConnections.size=${allConnections.size})`);
             connections.forEach((p, idx) => {
                 log(`  ${idx + 1}. ${p.name} | ${(p.headline || '').substring(0, 50)} | ${p.url || '—'}`);
             });
@@ -3494,7 +3510,7 @@ Also generate complete sequences:
                                 if (c && (c.name || c.url)) {
                                     const url = (c.url && String(c.url).trim()) ? String(c.url).split('?')[0].replace(/\/$/, '') : '';
                                     const key = url && url.includes('/in/') ? url : (c.name || '').toLowerCase();
-                                    if (key) allConnections.set(key, { name: c.name || '', url: url || '', headline: c.headline || '', location: c.location || '' });
+                                    if (key) allConnections.set(key, { name: c.name || '', url: url || '', headline: c.headline || '', location: c.location || '', followers: c.followers || '' });
                                 }
                             });
                             connections = Array.from(allConnections.values());
@@ -3508,6 +3524,7 @@ Also generate complete sequences:
             }
 
             if (connections.length === 0) {
+                log('[Connections] No connections to score; showing empty state');
                 if (introStatusBadge) introStatusBadge.textContent = 'No connections found';
                 introEmptyState.classList.remove('hidden');
                 introListContainer.classList.add('hidden');
@@ -3519,12 +3536,14 @@ Also generate complete sequences:
             const sellerGoal = (connectionsGoalInput && connectionsGoalInput.value) ? connectionsGoalInput.value.trim() : ((userGoalInput && userGoalInput.value) ? userGoalInput.value.trim() : '');
             const icpDefinition = (connectionsIcpInput && connectionsIcpInput.value) ? connectionsIcpInput.value.trim() : ((icpDefinitionInput && icpDefinitionInput.value) ? icpDefinitionInput.value.trim() : '');
             const sellerOffer = (connectionsOfferInput && connectionsOfferInput.value) ? connectionsOfferInput.value.trim() : ((offerDetailsInput && offerDetailsInput.value) ? offerDetailsInput.value.trim() : '');
+            log(`[Connections] Scoring ${connections.length} connections (goal/icp/offer present: ${!!sellerGoal}, ${!!icpDefinition}, ${!!sellerOffer})`);
             const apiKey = await getApiKey();
             const useBackend = useBackendCreditsCheckbox && useBackendCreditsCheckbox.checked;
             if (!useBackend && !apiKey) {
                 throw new Error('Set your API key in Settings or use backend credits.');
             }
 
+            log(`[Connections] Calling analyzeRelatedProfiles with ${connections.length} connections, maxResults=0`);
             const relevant = await analyzeRelatedProfiles(connections, sellerGoal, icpDefinition, sellerOffer, apiKey, null, 0);
             log(`[Connections] AI returned ${(relevant || []).length} relevant profiles (score ≥ 50):`);
             (relevant || []).forEach((p, idx) => {
@@ -3534,7 +3553,7 @@ Also generate complete sequences:
             });
             const threshold = Math.max(0, Math.min(100, parseInt(introThresholdInput?.value || '50', 10) || 50));
             const filtered = (relevant || []).filter(p => (p.relevanceScore || 0) >= threshold);
-            log(`[Connections] Scored (passed threshold ${threshold}): ${filtered.length} profiles`);
+            log(`[Connections] Scored (passed threshold ${threshold}): ${filtered.length} profiles (relevant was ${(relevant || []).length}, type=${typeof relevant})`);
             filtered.forEach((p, idx) => {
                 log(`  ${idx + 1}. ${p.name} | ${p.relevanceScore != null ? p.relevanceScore : '—'}`);
             });
@@ -3562,6 +3581,7 @@ Also generate complete sequences:
                 const headline = escapeHtml((p.headline || '').trim());
                 const score = typeof p.relevanceScore === 'number' ? p.relevanceScore : '—';
                 const role = (p.decisionPower && String(p.decisionPower).trim()) || '—';
+                const followers = (p.followers && String(p.followers).trim()) ? escapeHtml(String(p.followers).trim()) : '';
                 const url = (p.url || '').split('?')[0];
                 const fitReasonsText = Array.isArray(p.fitReasons) && p.fitReasons.length
                     ? p.fitReasons.join(', ')
@@ -3572,6 +3592,7 @@ Also generate complete sequences:
                     <div class="intro-list-card-title">${name}</div>
                     ${headline ? `<div class="intro-list-card-headline">${headline}</div>` : ''}
                     <div class="intro-list-card-score">Relevance: <strong>${score}</strong></div>
+                    ${followers ? `<div class="intro-list-card-followers">Followers: <strong>${followers}</strong></div>` : ''}
                     <div class="intro-list-card-role">Role: <strong>${escapeHtml(role)}</strong></div>
                     ${reasonHtml}
                     ${url ? `<a href="${escapeAttr(url)}" target="_blank" rel="noopener" class="secondary-btn intro-list-open-btn">Open profile</a>` : ''}
@@ -3581,6 +3602,7 @@ Also generate complete sequences:
             if (introStatusBadge) introStatusBadge.textContent = `Done · ${filtered.length} matches`;
             if (typeof updateCreditsDisplay === 'function') updateCreditsDisplay();
         } catch (e) {
+            log('[Connections] Crawl error:', e?.message || e, 'stack:', e?.stack);
             if (e && e.code === 'INSUFFICIENT_CREDITS') {
                 alert('Insufficient credits. Buy more in Settings or use your own API key.');
                 if (typeof showTab === 'function') showTab('tab-settings');

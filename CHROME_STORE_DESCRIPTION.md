@@ -31,9 +31,11 @@ Two features: **Outreach** (analyze profiles, get messages) and **Connections** 
 **Connections (Warm Intro List):**
 - **Crawl Your Connections**: On your LinkedIn Connections page (or "connections of" search), crawl up to 10 pages with one click
 - **Who to Find**: Set your own matching criteria (what you sell, target profile, goal) so results are relevant to you
-- **AI Scoring**: Each connection is scored as **Buyer**, **Influencer**, or **Evangelist** with a relevance score and a short reason
-- **Per-Page Stats**: See how many profiles were parsed and added per page in debug logs
+- **AI Scoring**: Each connection is scored as **Buyer**, **Influencer**, or **Evangelist** with a relevance score and a short reason; **follower count** is used in scoring and shown on each card
+- **Per-Page Stats**: See how many profiles were parsed and added per page in the extension’s Debug log
+- **Full “Why” Reasons**: Each card shows the full explanation for why a connection was selected (no truncation)
 - **Use for Intros**: Get a list of connections you can ask your direct connection to introduce—focused on buyers, influencers, and evangelists, not just direct buyers
+- **Reliable Flow**: Warm intro list uses a dedicated scoring call and includes debug logs (Marketing → Connections → Debug) to troubleshoot crawl and scoring
 
 **Perfect for:** Sales professionals, B2B marketers, business development reps, account executives
 
@@ -157,7 +159,7 @@ Need help? Contact us at manish.neo@gmail.com or access full documentation from 
 ### 🔄 What's New
 
 - ✅ Three products in one: Marketing, Content Copilot, and Job Application
-- ✅ **Marketing: Outreach + Connections**—profile analysis & messages, plus Warm intro list (crawl connections, score as Buyer/Influencer/Evangelist)
+- ✅ **Marketing: Outreach + Connections**—profile analysis & messages, plus Warm intro list (crawl connections, score as Buyer/Influencer/Evangelist; follower count in scoring; full “why” reasons; debug logs for crawl & scoring)
 - ✅ **Content: Create content or Write comments**—clear choice; analyze feed posts and get per-post “should you comment?” + suggested comments
 - ✅ 200,000 free credits for new users
 - ✅ Enhanced AI analysis

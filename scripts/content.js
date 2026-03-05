@@ -435,14 +435,18 @@ function extractConnectionsFromPage() {
             const card = link.closest('li, .entity-result, .mn-connection-card, .pvs-list__item, [class*="connection"]') || link.parentElement;
             let headline = '';
             let location = '';
+            let followers = '';
             if (card) {
                 const sub = card.querySelector('.entity-result__primary-subtitle, .entity-result__summary, .pvs-entity__caption, .mn-connection-card__details');
                 headline = sub?.innerText?.trim() || '';
                 const locEl = card.querySelector('.entity-result__secondary-subtitle, .pvs-entity__sub-title');
                 location = locEl?.innerText?.trim() || '';
+                const cardText = card.innerText || '';
+                const followerMatch = cardText.match(/(\d[\d,]*(?:\.\d+)?[KkMm]?)\s*followers?/i) || cardText.match(/followers?\s*[:\s]*(\d[\d,]*(?:\.\d+)?[KkMm]?)/i);
+                if (followerMatch) followers = followerMatch[1].trim();
             }
             seenUrls.add(href);
-            connections.push({ name, url: href, headline, location });
+            connections.push({ name, url: href, headline, location, followers });
         });
         console.log('[Connections] ✓ Extracted via link fallback:', connections.length);
         const rawPageExcerpt = connections.length === 0 ? getConnectionsListRawExcerpt() : '';
@@ -466,8 +470,12 @@ function extractConnectionsFromPage() {
             const headline = headlineEl?.innerText?.trim() || '';
             const locationEl = item.querySelector('.entity-result__secondary-subtitle, .pvs-entity__sub-title');
             const location = locationEl?.innerText?.trim() || '';
+            let followers = '';
+            const itemText = item.innerText || '';
+            const followerMatch = itemText.match(/(\d[\d,]*(?:\.\d+)?[KkMm]?)\s*followers?/i) || itemText.match(/followers?\s*[:\s]*(\d[\d,]*(?:\.\d+)?[KkMm]?)/i);
+            if (followerMatch) followers = followerMatch[1].trim();
             seenUrls.add(url);
-            connections.push({ name, url, headline, location });
+            connections.push({ name, url, headline, location, followers });
         } catch (err) {
             console.log('[Connections] ⚠ Error parsing item:', err.message);
         }
