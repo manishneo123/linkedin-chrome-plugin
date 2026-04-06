@@ -254,8 +254,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     log("Extension loaded. Initializing...");
 
     // === Backend Configuration ===
-    const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
-    //const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
+    //const BACKEND_URL = 'http://localhost:3000'; // Change to your production URL
+    const BACKEND_URL = 'https://linkedin.spdr.ltd'; // Change to your production URL
     // Classic path (My Network → Connections) or search results "connections of [profile]"
     function isConnectionsListPage(url) {
         if (!url || !url.includes('linkedin.com')) return false;
@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // === Credit Management System ===
     const CREDIT_CONFIG = {
-        FREE_TOKENS: 200000,
+        FREE_TOKENS: 0,
         TOKEN_COST_PER_1M: {
             'gpt-5.2': { input: 0.15, output: 0.60 }
         }
@@ -365,7 +365,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Fallback to local storage
         const stored = await chrome.storage.local.get(['credits_balance', 'credits_used']);
-        const balance = stored.credits_balance !== undefined ? stored.credits_balance : CREDIT_CONFIG.FREE_TOKENS;
+        const balance = stored.credits_balance !== undefined ? stored.credits_balance : 0;
         const used = stored.credits_used || 0;
         return { balance, used, remaining: balance - used };
     }
@@ -715,10 +715,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (stored.use_backend_credits !== undefined) {
         useBackendCreditsCheckbox.checked = stored.use_backend_credits;
     } else {
-        // Default to true (use backend credits) if not set
-        useBackendCreditsCheckbox.checked = true;
+        // Default to false so user must provide their own API key unless they explicitly choose backend credits.
+        useBackendCreditsCheckbox.checked = false;
         // Save the default value
-        await chrome.storage.local.set({ use_backend_credits: true });
+        await chrome.storage.local.set({ use_backend_credits: false });
     }
     
     // Set visibility based on checkbox state - use classList to properly handle .hidden class
@@ -3540,7 +3540,7 @@ Also generate complete sequences:
             const apiKey = await getApiKey();
             const useBackend = useBackendCreditsCheckbox && useBackendCreditsCheckbox.checked;
             if (!useBackend && !apiKey) {
-                throw new Error('Set your API key in Settings or use backend credits.');
+                throw new Error('Add your API key in Settings or switch to backend credits and buy a package.');
             }
 
             log(`[Connections] Calling analyzeRelatedProfiles with ${connections.length} connections, maxResults=0`);
@@ -3604,7 +3604,7 @@ Also generate complete sequences:
         } catch (e) {
             log('[Connections] Crawl error:', e?.message || e, 'stack:', e?.stack);
             if (e && e.code === 'INSUFFICIENT_CREDITS') {
-                alert('Insufficient credits. Buy more in Settings or use your own API key.');
+                alert('Insufficient credits. Buy more in Settings or add your own API key.');
                 if (typeof showTab === 'function') showTab('tab-settings');
             } else {
                 alert(e.message || 'Crawl failed');
@@ -5791,7 +5791,7 @@ The image should be:
                 
                 const currentApiKey = await getApiKey();
                 const useBackend = await chrome.storage.local.get('use_backend_credits');
-                const useBackendCredits = useBackend.use_backend_credits !== false;
+                const useBackendCredits = useBackend.use_backend_credits === true;
                 
                 let openaiApiKey = null;
                 if (!useBackendCredits) {
@@ -6191,7 +6191,7 @@ Be thorough and extract all available information. If a field is not mentioned, 
             
             const currentApiKey = await getApiKey();
             const useBackend = await chrome.storage.local.get('use_backend_credits');
-            const useBackendCredits = useBackend.use_backend_credits !== false;
+            const useBackendCredits = useBackend.use_backend_credits === true;
             
             let openaiApiKey = null;
             if (!useBackendCredits) {

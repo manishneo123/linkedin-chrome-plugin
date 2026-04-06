@@ -44,7 +44,7 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 OPENAI_API_KEY=sk-your-openai-api-key
 
 # Credit Configuration
-FREE_TOKENS=10000
+FREE_TOKENS=0
 TOKEN_COST_PER_1M_INPUT=0.15
 TOKEN_COST_PER_1M_OUTPUT=0.60
 ```

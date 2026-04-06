@@ -1,13 +1,13 @@
 # Chrome Web Store Listing Description
 
 ## Short Description (132 characters max)
-AI LinkedIn assistant: sales outreach, warm intros from connections, create content, write comments & job apps. 200K free credits!
+AI LinkedIn assistant for outreach, warm intros, content, comments, and job apps. Use your OpenAI API key or paid credits.
 
 ## Full Description
 
 ### 🚀 Transform Your LinkedIn Presence with AI Sales Copilot
 
-**Get 200,000 FREE credits to start!** No credit card required. Start using AI-powered LinkedIn tools immediately.
+Use your OpenAI API key or buy backend credits to run AI-powered LinkedIn workflows.
 
 AI Sales Copilot is your all-in-one LinkedIn assistant that helps sales professionals, content creators, and job seekers maximize their LinkedIn success. With three powerful products in one extension, automate your outreach, create engaging content, and optimize your job applications—all powered by advanced AI.
 
@@ -80,7 +80,7 @@ Optimize your CV for LinkedIn job applications with AI-powered analysis. Get mat
 
 ### 🎯 Why Choose AI Sales Copilot?
 
-✅ **200,000 FREE Credits** - Start using immediately, no credit card required
+✅ **Flexible Billing** - Use your own OpenAI API key or buy backend credits
 ✅ **All-in-One Solution** - Three powerful products in a single extension
 ✅ **AI-Powered Intelligence** - Advanced GPT technology for smart analysis and generation
 ✅ **Time Saving** - Reduce hours of manual work to seconds of automated analysis
@@ -93,7 +93,7 @@ Optimize your CV for LinkedIn job applications with AI-powered analysis. Get mat
 ### 💡 How It Works
 
 1. **Install the Extension** - Add AI Sales Copilot to Chrome in seconds
-2. **Get Free Credits** - Receive 200,000 free credits automatically (no setup required)
+2. **Choose Billing Mode** - Add your OpenAI API key or use backend credits
 3. **Choose Your Product** - Switch between Marketing, Content Copilot, or Job Application
 4. **Start Using** - Analyze profiles, generate content, or optimize your CV immediately
 
@@ -111,8 +111,7 @@ Optimize your CV for LinkedIn job applications with AI-powered analysis. Get mat
 
 ### 💰 Pricing & Credits
 
-- **Free Credits**: 200,000 tokens to get started
-- **Flexible Options**: Use backend credits or your own OpenAI API key
+- **Flexible Options**: Use your own OpenAI API key or backend credits
 - **Affordable Packages**: Purchase additional credits when needed
 - **Transparent Pricing**: See exactly how many credits each operation uses
 
@@ -144,9 +143,9 @@ Optimize your CV for LinkedIn job applications with AI-powered analysis. Get mat
 1. Click "Add to Chrome" to install
 2. Open any LinkedIn page
 3. Click the extension icon
-4. Start with 200,000 free credits - no setup required!
+4. Add your API key or buy credits and start using AI workflows
 
-**No credit card required. No trial period. Just free credits to start using AI Sales Copilot immediately.**
+**Bring your own OpenAI API key or use backend credits with transparent usage tracking.**
 
 ---
 
@@ -161,7 +160,7 @@ Need help? Contact us at manish.neo@gmail.com or access full documentation from 
 - ✅ Three products in one: Marketing, Content Copilot, and Job Application
 - ✅ **Marketing: Outreach + Connections**—profile analysis & messages, plus Warm intro list (crawl connections, score as Buyer/Influencer/Evangelist; follower count in scoring; full “why” reasons; debug logs for crawl & scoring)
 - ✅ **Content: Create content or Write comments**—clear choice; analyze feed posts and get per-post “should you comment?” + suggested comments
-- ✅ 200,000 free credits for new users
+- ✅ Billing update: no automatic free credits for new users
 - ✅ Enhanced AI analysis
 - ✅ Structured CV processing for job applications
 - ✅ Content inspiration from successful creators
@@ -171,5 +170,5 @@ Need help? Contact us at manish.neo@gmail.com or access full documentation from 
 
 ---
 
-**Transform your LinkedIn strategy today. Install AI Sales Copilot and get 200,000 free credits to start!**
+**Transform your LinkedIn strategy today. Install AI Sales Copilot and start with your API key or backend credits.**
 

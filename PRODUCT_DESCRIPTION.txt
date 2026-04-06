@@ -142,7 +142,7 @@ COMPETITIVE ADVANTAGE: More personalized than competitors, faster opportunity re
 PRICING & CREDITS
 =================
 
-BACKEND CREDITS: Pre-paid packages in USD and INR (Starter, Professional, Business, Enterprise). Credits consumed based on analysis complexity, data processed, messages generated, research depth. Free credits on signup.
+BACKEND CREDITS: Pre-paid packages in USD and INR (Starter, Professional, Business, Enterprise). Credits consumed based on analysis complexity, data processed, messages generated, research depth. No automatic free credits on signup.
 
 OWN API KEY: Use your OpenAI API key directly, pay OpenAI, granular cost control, no credit management.
 
